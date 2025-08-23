@@ -12,7 +12,7 @@ export default function SessionClient() {
     setLoading(true);
     try {
       if (authClient.signOut) {
-        await authClient.signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/"; } } } as any);
+        await authClient.signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/"; } } } as unknown as { fetchOptions?: { onSuccess?: () => void } });
         return;
       }
 
@@ -24,7 +24,7 @@ export default function SessionClient() {
   }
 
   if (isPending) return <div className="text-center text-[var(--foreground-secondary)]">Connexion...</div>;
-  if (!session) return <div className="text-center text-[var(--foreground-secondary)]">Vous n'êtes pas connecté.</div>;
+  if (!session) return <div className="text-center text-[var(--foreground-secondary)]">Vous n&apos;êtes pas connecté.</div>;
 
   return (
     <div className="space-y-6">

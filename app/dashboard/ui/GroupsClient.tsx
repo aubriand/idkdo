@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Button from "@/app/components/ui/Button";
 import Input from "@/app/components/ui/Input";
 import Modal from "@/app/components/ui/Modal";
@@ -23,25 +23,28 @@ export default function GroupsClient() {
   // modal state
   const [confirm, setConfirm] = useState<{ open: boolean; title: string; onYes: () => void } | null>(null);
 
-  useEffect(() => {
-    refreshGroups();
-  }, []);
-
-  async function refreshGroups() {
-    setLoading(true); setError(null);
+  const refreshGroups = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/groups', { cache: 'no-store' });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
-  const data = await res.json();
-  setGroups(data);
-    } catch (e: any) {
-  const msg = e.message || 'Erreur';
-  setError(msg);
-  toastError({ title: 'Erreur', description: msg });
+      const data: Group[] = await res.json();
+      setGroups(data);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Erreur';
+      setError(msg);
+      toastError({ title: 'Erreur', description: msg });
     } finally {
       setLoading(false);
     }
-  }
+  }, [toastError]);
+
+  useEffect(() => {
+    refreshGroups();
+  }, [refreshGroups]);
+
+  
 
   async function createGroup(formData: FormData) {
     setError(null); setLoading(true);
@@ -51,16 +54,13 @@ export default function GroupsClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: String(formData.get('name') || ''), slug: String(formData.get('slug') || '') })
       });
-  if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `Erreur ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`Erreur ${res.status}`);
       await refreshGroups();
-  success({ title: 'Groupe créé' });
-    } catch (e: any) {
-  const msg = e.message || 'Erreur';
-  setError(msg);
-  toastError({ title: 'Erreur', description: msg });
+      success({ title: 'Groupe créé' });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Erreur';
+      setError(msg);
+      toastError({ title: 'Erreur', description: msg });
     } finally { setLoading(false); }
   }
 
@@ -68,17 +68,18 @@ export default function GroupsClient() {
     try {
       const res = await fetch(`/api/lists`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data = await res.json();
+      const data: GiftList[] = await res.json();
       // store under a fixed key since lists are per-user (single list)
       setLists(prev => ({ ...prev, ['me']: data }));
-    } catch (e) { /* ignore for now */ }
-  }  async function loadMembers(groupId: string) {
+    } catch (_e) { /* ignore for now */ }
+  }
+  async function loadMembers(groupId: string) {
     try {
       const res = await fetch(`/api/groups/${groupId}/members`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data = await res.json();
+      const data: Member[] = await res.json();
       setMembers(prev => ({ ...prev, [groupId]: data }));
-    } catch (e) { /* ignore */ }
+    } catch (_e) { /* ignore */ }
   }
 
   async function createList(_groupId: string, formData: FormData) {
@@ -89,10 +90,10 @@ export default function GroupsClient() {
   async function loadIdeas(listId: string) {
     try {
       const res = await fetch(`/api/ideas?listId=${encodeURIComponent(listId)}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data = await res.json();
+      if (!res.ok) throw new Error(`Erreur ${res.status}`);
+      const data: Idea[] = await res.json();
       setIdeas(prev => ({ ...prev, [listId]: data }));
-    } catch (e) { /* ignore */ }
+    } catch (_e) { /* ignore */ }
   }
 
   async function createIdea(listId: string, formData: FormData) {

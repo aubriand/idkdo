@@ -16,9 +16,10 @@ export default function LoginClient() {
     // initialize oneTap plugin if available on client
     (async () => {
       try {
-        if ((authClient as any).oneTap) await (authClient as any).oneTap();
-      } catch (err: any) {
-        setMessage(err?.message ?? "Erreur lors de la connexion One Tap");
+        if (authClient.oneTap) await authClient.oneTap();
+      } catch (err) {
+        const e = err as Error;
+        setMessage(e.message ?? "Erreur lors de la connexion One Tap");
       }
     })();
   }, []);
@@ -26,13 +27,14 @@ export default function LoginClient() {
   async function signInWithGoogle() {
     setLoading(true);
     setMessage(null);
-    try {
+  try {
       // prefer client SDK signIn if available
       if (authClient.signIn?.social) {
-        const res = await authClient.signIn.social({ provider: 'google' } as any);
+        const res = await authClient.signIn.social({ provider: 'google' } as { provider: 'google' });
         // some providers return a url to redirect to
-        if ((res as any)?.url) {
-          window.location.href = (res as any).url;
+        const redirectUrl = (res as unknown as { url?: string })?.url;
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
           return;
         }
       }
@@ -46,8 +48,9 @@ export default function LoginClient() {
       if (!r.ok) throw new Error('Échec initialisation Google');
       const data = await r.json();
       if (data?.url) window.location.href = data.url;
-    } catch (err: any) {
-      setMessage(err?.message ?? "Erreur lors de la connexion Google");
+    } catch (err) {
+      const e = err as Error;
+      setMessage(e.message ?? "Erreur lors de la connexion Google");
     } finally {
       setLoading(false);
     }
@@ -59,7 +62,7 @@ export default function LoginClient() {
     setMessage(null);
     try {
       if (authClient.signIn?.magicLink) {
-        await authClient.signIn.magicLink({ email } as any);
+        await authClient.signIn.magicLink({ email });
         setMessage("Magic link envoyé — vérifiez votre boite mail.");
         return;
       }
@@ -72,8 +75,9 @@ export default function LoginClient() {
 
       if (!res.ok) throw new Error('Erreur en envoyant le magic link');
       setMessage("Magic link envoyé — vérifiez votre boite mail.");
-    } catch (err: any) {
-      setMessage(err?.message ?? "Erreur lors de l'envoi du magic link");
+    } catch (err) {
+      const e = err as Error;
+      setMessage(e.message ?? "Erreur lors de l\'envoi du magic link");
     } finally {
       setLoading(false);
     }
@@ -102,11 +106,11 @@ export default function LoginClient() {
 
       <form onSubmit={sendMagicLink} className="grid gap-4">
         <Input
-          label="📧 Votre adresse email familiale"
+          label="📧 Votre adresse email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="famille@exemple.com"
+          placeholder="mail@exemple.com"
           required
           disabled={loading}
         />

@@ -7,7 +7,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const session = await api.getSession({ headers: await headers() });
   if (!session) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   const { id } = await params;
-  const existing = await prisma.suggestion // dummy to enforce import order
   const claim = await prisma.claim.findFirst({ where: { ideaId: id, userId: session.user.id } });
   return new Response(JSON.stringify({ claimed: !!claim }), { status: 200 });
 }

@@ -12,7 +12,14 @@ export default function SuggestIdeaForm({ listId }: { listId: string }) {
     e.preventDefault();
     setLoading(true); setError(null);
     const fd = new FormData(e.currentTarget);
-    const payload: any = {
+    const payload: {
+      listId: string;
+      title: string;
+      url?: string;
+      image?: string;
+      notes?: string;
+      priceCents?: number;
+    } = {
       listId,
       title: String(fd.get('title') || '').trim(),
       url: String(fd.get('url') || '').trim() || undefined,
@@ -28,12 +35,13 @@ export default function SuggestIdeaForm({ listId }: { listId: string }) {
         body: JSON.stringify(payload)
       });
       if (!res.ok) {
-        const b = await res.json().catch(() => ({}));
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(b.error || 'Erreur');
       }
       e.currentTarget.reset();
-    } catch (err: any) {
-      setError(err?.message || 'Erreur');
+    } catch (err) {
+      const e = err as Error;
+      setError(e.message || 'Erreur');
     } finally {
       setLoading(false);
     }
@@ -42,7 +50,7 @@ export default function SuggestIdeaForm({ listId }: { listId: string }) {
   return (
     <form onSubmit={onSubmit} className="grid gap-3 bg-[var(--surface)] rounded-xl p-4 border border-[var(--border)]">
       <h4 className="font-semibold text-[var(--foreground)]">Proposer une idée</h4>
-      <Input name="title" label="Nom de l'idée" required placeholder="Écharpe en laine" />
+  <Input name="title" label="Nom de l'idée" required placeholder="Écharpe en laine" />
       <div className="grid md:grid-cols-2 gap-3">
         <Input name="url" label="Lien (optionnel)" placeholder="https://…" />
         <Input name="image" label="Image (URL)" placeholder="https://…/photo.jpg" />

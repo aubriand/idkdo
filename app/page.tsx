@@ -6,8 +6,9 @@ import { Card, CardContent, CardTitle } from "./components/ui/Card";
 import Image from "next/image";
 import Logo from "@/app/assets/IDKDO.png";
 
+type SessionData = { user: { id: string; name?: string | null; email?: string | null } } | null;
 export default async function HomePage() {
-  let session: any = null;
+  let session: SessionData = null;
   try {
     session = await api.getSession({ headers: await headers() });
   } catch (error) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Button from "@/app/components/ui/Button";
 import Input from "@/app/components/ui/Input";
 import Modal from "@/app/components/ui/Modal";
@@ -29,37 +29,39 @@ export default function MyListClient() {
   const [confirm, setConfirm] = useState<{ open: boolean; title: string; onYes: () => void } | null>(null);
   const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
 
-  useEffect(() => {
-    loadMyList();
-  }, []);
-
-  async function loadMyList() {
+  const loadMyList = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch('/api/lists', { cache: 'no-store' });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data = await res.json();
+      const data: GiftList[] = await res.json();
       if (data.length > 0) {
         setList(data[0]);
-        loadIdeas(data[0].id);
+        void loadIdeas(data[0].id);
       }
-    } catch (e: any) {
-      const msg = e.message || 'Erreur lors du chargement';
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Erreur lors du chargement';
       setError(msg);
       toastError({ title: 'Erreur', description: msg });
     } finally {
       setLoading(false);
     }
-  }
+  }, [toastError]);
+
+  useEffect(() => {
+    loadMyList();
+  }, [loadMyList]);
+
+  
 
   async function loadIdeas(listId: string) {
     try {
       const res = await fetch(`/api/ideas?listId=${encodeURIComponent(listId)}`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data = await res.json();
+      const data: Idea[] = await res.json();
       setIdeas(data);
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Error loading ideas:', e);
     }
   }
@@ -88,8 +90,9 @@ export default function MyListClient() {
       
       await loadIdeas(list.id);
       success({ title: 'Idée ajoutée avec succès !' });
-    } catch (e: any) {
-      toastError({ title: 'Erreur', description: e.message || 'Impossible d\'ajouter l\'idée' });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Impossible d\'ajouter l\'idée';
+      toastError({ title: 'Erreur', description: msg });
     }
   }
 
@@ -105,8 +108,9 @@ export default function MyListClient() {
       
       if (list) await loadIdeas(list.id);
       success({ title: 'Idée modifiée !' });
-    } catch (e: any) {
-      toastError({ title: 'Erreur', description: e.message || 'Impossible de modifier l\'idée' });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Impossible de modifier l\'idée';
+      toastError({ title: 'Erreur', description: msg });
     }
   }
 

@@ -3,6 +3,14 @@ import { prisma } from '@/app/lib/prisma';
 import { headers } from 'next/headers';
 import type { NextRequest } from 'next/server';
 
+type UpdateIdeaBody = Partial<{
+  title: string;
+  url: string | null;
+  notes: string | null;
+  priceCents: number | null;
+  image: string | null;
+}>;
+
 async function getIdeaAccess(userId: string, ideaId: string) {
   const idea = await prisma.idea.findUnique({ where: { id: ideaId }, select: { id: true, listId: true, createdById: true } });
   if (!idea) return { status: 404 as const };
@@ -20,13 +28,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const access = await getIdeaAccess(session.user.id, id);
   if (access.status !== 200) return new Response(JSON.stringify({ error: access.status === 404 ? 'Not found' : 'Forbidden' }), { status: access.status });
 
-  const body = await req.json().catch(() => ({}));
-  const data: any = {};
+  const raw: unknown = await req.json().catch(() => ({}));
+  const body = (raw ?? {}) as Record<string, unknown>;
+  const data: UpdateIdeaBody = {};
   if (typeof body.title === 'string') data.title = body.title.trim();
-  if (typeof body.url === 'string') data.url = body.url || null;
-  if (typeof body.notes === 'string') data.notes = body.notes || null;
-  if (body.priceCents !== undefined) data.priceCents = body.priceCents === null ? null : Number(body.priceCents);
-  if (typeof body.image === 'string') data.image = body.image || null;
+  if (typeof body.url === 'string' || body.url === null) data.url = (body.url as string | null) || null;
+  if (typeof body.notes === 'string' || body.notes === null) data.notes = (body.notes as string | null) || null;
+  if (body.priceCents === null) data.priceCents = null;
+  else if (typeof body.priceCents === 'number') data.priceCents = body.priceCents;
+  if (typeof body.image === 'string' || body.image === null) data.image = (body.image as string | null) || null;
   if (Object.keys(data).length === 0) return new Response(JSON.stringify({ error: 'Nothing to update' }), { status: 400 });
 
   const updated = await prisma.idea.update({ where: { id }, data });

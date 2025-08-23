@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Ca
 import ListItemCard from "@/app/components/ListItemCard";
 import dynamic from "next/dynamic";
 import ClaimButton from "@/app/components/ClaimButton";
-const SuggestIdeaForm = dynamic(() => import("@/app/components/SuggestIdeaForm"), { ssr: false });
+const SuggestIdeaForm = dynamic(() => import("@/app/components/SuggestIdeaForm"));
 
 export default async function PublicListPage({ params }: { params: { id: string } }) {
   const session = await api.getSession({ headers: await headers() });
@@ -60,7 +60,7 @@ export default async function PublicListPage({ params }: { params: { id: string 
                 <ul className="grid gap-3 sm:grid-cols-2">
                   {ideas.map((i) => (
                     <li key={i.id} className="space-y-2">
-                      <ListItemCard item={{ id: i.id, title: i.title, image: i.image ?? null, url: i.url ?? null, priceCents: i.priceCents ?? null, createdAt: i.createdAt, ownerName: list.owner.name ?? null, claimsCount: (i as any)._count?.claims ?? 0 }} />
+                      <ListItemCard item={{ id: i.id, title: i.title, image: i.image ?? null, url: i.url ?? null, priceCents: i.priceCents ?? null, createdAt: i.createdAt, ownerName: list.owner.name ?? null, claimsCount: (i as { _count?: { claims?: number } })._count?.claims ?? 0 }} />
                       {!isOwner ? (<ClaimButton ideaId={i.id} />) : null}
                     </li>
                   ))}

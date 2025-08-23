@@ -34,8 +34,8 @@ export default function GroupsClient() {
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       const data = await res.json();
       setGroups(data);
-    } catch (e: any) {
-      const msg = e.message || 'Erreur';
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Erreur';
       setError(msg);
       toastError({ title: 'Erreur', description: msg });
     } finally {
@@ -61,8 +61,8 @@ export default function GroupsClient() {
       }
       await refreshGroups();
       success({ title: 'Groupe créé avec succès !' });
-    } catch (e: any) {
-      const msg = e.message || 'Erreur';
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Erreur';
       setError(msg);
       toastError({ title: 'Erreur', description: msg });
     } finally { 

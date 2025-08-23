@@ -96,7 +96,7 @@ export default async function DashboardPage() {
         listId: i.listId,
               ownerName: owner?.name ?? null,
               ownerImage: owner?.image ?? null,
-              claimsCount: (i as any)._count?.claims ?? 0,
+              claimsCount: (i as { _count?: { claims?: number } })._count?.claims ?? 0,
             };
           });
         }
@@ -133,7 +133,7 @@ export default async function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     {myIdeas.length === 0 ? (
-                      <div className="text-[var(--foreground-secondary)] text-sm">Aucune idée pour le moment. Ajoutez votre première idée dans "Ma liste".</div>
+                      <div className="text-[var(--foreground-secondary)] text-sm">Aucune idée pour le moment. Ajoutez votre première idée dans &quot;Ma liste&quot;.</div>
                     ) : (
                       <ul className="grid gap-3 sm:grid-cols-2">
                         {myIdeas.map((i) => (

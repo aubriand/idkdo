@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import Button from "@/app/components/ui/Button";
 import ButtonLink from "@/app/components/ui/ButtonLink";
@@ -27,36 +27,38 @@ export default function DiscoverClient() {
   const [ideas, setIdeas] = useState<Record<string, Idea[]>>({});
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadGroups();
-  }, []);
-
-  async function loadGroups() {
+  const loadGroups = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/groups', { cache: 'no-store' });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data = await res.json();
+      const data: Group[] = await res.json();
       setGroups(data);
-      
       // Load members for each group
       for (const group of data) {
-        loadMembers(group.id);
+        // fire and forget
+        void loadMembers(group.id);
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Error loading groups:', e);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    loadGroups();
+  }, [loadGroups]);
+
+  
 
   async function loadMembers(groupId: string) {
     try {
       const res = await fetch(`/api/groups/${groupId}/members`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data = await res.json();
+      const data: Member[] = await res.json();
       setMembers(prev => ({ ...prev, [groupId]: data }));
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Error loading members:', e);
     }
   }
@@ -65,9 +67,9 @@ export default function DiscoverClient() {
     try {
       const res = await fetch(`/api/ideas?listId=${encodeURIComponent(listId)}`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data = await res.json();
+      const data: Idea[] = await res.json();
       setIdeas(prev => ({ ...prev, [listId]: data }));
-    } catch (e) {
+    } catch (e: unknown) {
       console.error('Error loading ideas:', e);
     }
   }
@@ -90,7 +92,7 @@ export default function DiscoverClient() {
             Aucun groupe trouvé
           </h3>
           <p className="text-[var(--foreground-secondary)] mb-4">
-            Vous devez faire partie d'un groupe pour découvrir les listes des autres membres.
+            Vous devez faire partie d&apos;un groupe pour découvrir les listes des autres membres.
           </p>
           <ButtonLink href="/groups" variant="accent">
             <span className="text-lg">➕</span>
@@ -207,7 +209,7 @@ export default function DiscoverClient() {
                 
                 {members[group.id].filter(m => m.list).length === 0 && (
                   <p className="text-[var(--foreground-secondary)] text-center py-6">
-                    Aucun membre n'a encore créé de liste dans ce groupe.
+                    Aucun membre n&apos;a encore créé de liste dans ce groupe.
                   </p>
                 )}
               </div>

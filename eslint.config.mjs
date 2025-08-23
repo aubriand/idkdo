@@ -18,8 +18,21 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "generated/**",
+      "generated-prisma/**",
+      "generated_prisma/**",
+      "prisma/generated/**",
     ],
+    rules: {
+      "react/no-unescaped-entities": "off"
+    }
   },
+  {
+    files: ["**/*.d.ts"],
+    rules: {
+      "@typescript-eslint/triple-slash-reference": "off",
+    }
+  }
 ];
 
 export default eslintConfig;
