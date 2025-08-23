@@ -1,26 +1,112 @@
 @import "tailwindcss";
 
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base colors - modern clean palette */
+  --background: #fafafa; /* neutral-50 */
+  --background-secondary: #f4f4f5; /* zinc-100 */
+  --foreground: #18181b; /* zinc-900 */
+  --foreground-secondary: #52525b; /* zinc-600 */
+  
+  /* Brand: teal (primary), coral (secondary), sunny yellow (accent) */
+  --primary: #14b8a6; /* teal-500 */
+  --primary-hover: #0d9488; /* teal-600 */
+  --primary-light: #a7f3d0; /* minty light (emerald-200-ish) for better contrast */
+  --primary-lighter: #f0fdfa; /* teal-50 */
+
+  --secondary: #ff6f61; /* coral */
+  --secondary-hover: #e85e50; /* coral darker */
+  --secondary-light: #ffe2de; /* coral-100 */
+  --secondary-lighter: #fff1ef; /* coral-50 */
+
+  --accent: #f59e0b; /* amber-500 */
+  --accent-hover: #d97706; /* amber-600 */
+  --accent-light: #fde68a; /* amber-200 */
+  --accent-lighter: #fffbeb; /* amber-50 */
+  
+  /* Card and surfaces */
+  --card-bg: #ffffff;
+  --card-border: #e4e4e7; /* zinc-200 */
+  --surface: #f9fafb; /* gray-50 */
+  
+  /* Semantic colors */
+  --success: #10b981; /* emerald-500 */
+  --warning: #f59e0b; /* amber-500 */
+  --error: #ef4444; /* red-500 */
+  --info: #3b82f6; /* blue-500 */
+  
+  /* Borders and dividers */
+  --border: #e4e4e7; /* zinc-200 */
+  --border-light: #f4f4f5; /* zinc-100 */
+  /* Background accents tuned to teal/coral */
+    --bg-gradient-from: transparent;
+    --bg-gradient-to: transparent;
+  /* Overlay for modals/drawers */
+  --overlay: rgba(24,24,27,0.45); /* zinc-900 with ~45% opacity */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Class-based dark mode overrides (takes precedence when `.dark` is on <html>) */
+.dark {
+  --background: #09090b; /* zinc-950 */
+  --background-secondary: #18181b; /* zinc-900 */
+  --foreground: #fafafa; /* zinc-50 */
+  --foreground-secondary: #a1a1aa; /* zinc-400 */
+  --card-bg: #18181b; /* zinc-900 */
+  --card-border: #27272a; /* zinc-800 */
+  --surface: #18181b; /* zinc-900 */
+  --border: #27272a; /* zinc-800 */
+  --border-light: #3f3f46; /* zinc-700 */
+    --bg-gradient-from: transparent;
+    --bg-gradient-to: transparent;
+  --overlay: rgba(0,0,0,0.6);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  font-size: 0.875rem; /* 14px */
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .container { max-width: 720px; }
+}
+@media (min-width: 1024px) {
+  .container { max-width: 960px; }
+}
+@media (min-width: 1280px) {
+  .container { max-width: 1200px; }
+}
+
+/* Modern scroll bars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground-secondary);
 }
