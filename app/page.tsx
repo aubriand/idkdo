@@ -7,7 +7,7 @@ import Image from "next/image";
 import Logo from "@/app/assets/IDKDO.png";
 
 type SessionData = { user: { id: string; name?: string | null; email?: string | null } } | null;
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
   let session: SessionData = null;
   try {
     session = await api.getSession({ headers: await headers() });
@@ -17,7 +17,8 @@ export default async function HomePage() {
   }
 
   if (session) {
-    redirect('/dashboard');
+    const cb = typeof searchParams?.callbackUrl === 'string' ? searchParams!.callbackUrl : undefined;
+    redirect(cb || '/dashboard');
   }
 
   return (

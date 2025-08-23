@@ -3,24 +3,18 @@
 import { useEffect, useState } from "react";
 import Button from "@/app/components/ui/Button";
 import Input from "@/app/components/ui/Input";
-import Modal from "@/app/components/ui/Modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import { useToast } from "@/app/components/ui/ToastProvider";
-import Link from "next/link";
-import ButtonLink from "@/app/components/ui/ButtonLink";
+import GroupCard from "../components/GroupCard";
 
-type Group = { id: string; name: string; slug: string };
-type Member = { userId: string; name: string; list: { id: string; title: string } | null };
+type Group = { id: string; name: string; slug: string; memberships: Array<{ id: string }> };
 
 export default function GroupsClient() {
   const [groups, setGroups] = useState<Group[]>([]);
-  const [members, setMembers] = useState<Record<string, Member[]>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { success, error: toastError } = useToast();
-
-  // modal state
-  const [confirm, setConfirm] = useState<{ open: boolean; title: string; onYes: () => void } | null>(null);
+  const [joinInput, setJoinInput] = useState("");
 
   useEffect(() => {
     refreshGroups();
@@ -50,10 +44,7 @@ export default function GroupsClient() {
       const res = await fetch('/api/groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          name: String(formData.get('name') || ''), 
-          slug: String(formData.get('slug') || '') 
-        })
+        body: JSON.stringify({ name: String(formData.get('name') || '') })
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -70,50 +61,33 @@ export default function GroupsClient() {
     }
   }
 
-  async function loadMembers(groupId: string) {
+  function extractToken(input: string): string | null {
     try {
-      const res = await fetch(`/api/groups/${groupId}/members`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data = await res.json();
-      setMembers(prev => ({ ...prev, [groupId]: data }));
-    } catch (e) { /* ignore */ }
-  }
-
-  async function renameGroup(groupId: string) {
-    const name = prompt('Nouveau nom du groupe ?');
-    if (!name) return;
-    try {
-      const res = await fetch(`/api/groups/${groupId}`, { 
-        method: 'PUT', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ name }) 
-      });
-      if (res.ok) {
-        refreshGroups();
-        success({ title: 'Groupe renommé !' });
-      }
-    } catch (e) {
-      toastError({ title: 'Erreur', description: 'Impossible de renommer le groupe' });
+      // accept full URL like https://site/invite/{token} or just the token
+      const trimmed = input.trim();
+      if (!trimmed) return null;
+      if (/^[a-z0-9]+$/i.test(trimmed)) return trimmed; // looks like token
+      const url = new URL(trimmed);
+      const parts = url.pathname.split('/').filter(Boolean);
+      const idx = parts.findIndex(p => p.toLowerCase() === 'invite');
+      if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
+      return parts[parts.length - 1] || null;
+    } catch {
+      // not a valid URL, fallback to last segment heuristic
+      const parts = input.split('/').filter(Boolean);
+      return parts[parts.length - 1] || null;
     }
   }
 
-  async function deleteGroup(groupId: string) {
-    setConfirm({ 
-      open: true, 
-      title: 'Supprimer ce groupe et son contenu ?', 
-      onYes: async () => {
-        try {
-          const res = await fetch(`/api/groups/${groupId}`, { method: 'DELETE' });
-          if (res.ok) { 
-            await refreshGroups(); 
-            success({ title: 'Groupe supprimé !' }); 
-          }
-        } catch (e) {
-          toastError({ title: 'Erreur', description: 'Impossible de supprimer le groupe' });
-        }
-        setConfirm(null);
-      }
-    });
+  async function joinByLink(e: React.FormEvent) {
+    e.preventDefault();
+    const token = extractToken(joinInput);
+    if (!token) {
+      toastError({ title: 'Lien invalide', description: 'Veuillez coller un lien ou un code d\'invitation valide.' });
+      return;
+    }
+    // Navigate to invite landing which handles auth + membership
+    window.location.href = `/invite/${encodeURIComponent(token)}`;
   }
 
   return (
@@ -128,19 +102,12 @@ export default function GroupsClient() {
         </CardHeader>
         <CardContent>
           <form action={createGroup} className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Input 
-                name="name" 
-                label="Nom du groupe" 
-                placeholder="Famille Martin 2025" 
-                required 
-              />
-              <Input 
-                name="slug" 
-                label="Identifiant unique" 
-                placeholder="famille-martin-2025" 
-              />
-            </div>
+            <Input 
+              name="name" 
+              label="Nom du groupe" 
+              placeholder="Famille Martin 2025" 
+              required 
+            />
             <Button type="submit" size="lg" disabled={loading} variant="secondary">
               <span className="text-lg">🎪</span>
               {loading ? 'Création...' : 'Créer le groupe'}
@@ -154,122 +121,46 @@ export default function GroupsClient() {
         </CardContent>
       </Card>
 
-      {/* Groups List */}
+      {/* Join by invite link */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <span className="text-xl">🔗</span>
+            Rejoindre un groupe via un lien
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={joinByLink} className="flex flex-col sm:flex-row gap-3 [&>div]:flex-1">
+            <Input
+              value={joinInput}
+              onChange={(e) => setJoinInput(e.target.value)}
+              placeholder="Collez un lien d\'invitation ou un code"
+              aria-label="Lien d\'invitation"
+            />
+            <Button type="submit" variant="primary">Rejoindre</Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Groups List - same rendering as dashboard */}
       <div>
         <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6 flex items-center gap-2">
           <span className="text-2xl">👨‍👩‍👧‍👦</span>
           Vos groupes
         </h2>
-        
-        {loading && groups.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-4">⏳</div>
-            <p className="text-[var(--foreground-secondary)]">Chargement de vos groupes...</p>
-          </div>
-        ) : groups.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <div className="text-6xl mb-4">🏠</div>
-              <h3 className="text-xl font-semibold text-[var(--foreground)] mb-2">
-                Aucun groupe pour l'instant
-              </h3>
-              <p className="text-[var(--foreground-secondary)]">
-                Créez votre premier groupe familial ci-dessus !
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-6 lg:grid-cols-2">
-            {groups.map(group => (
-              <Card key={group.id} className="hover:shadow-lg transition-all duration-200">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">🎪</span>
-                        <CardTitle className="text-xl">{group.name}</CardTitle>
-                      </div>
-                      <div className="text-sm text-[var(--foreground-secondary)] bg-[var(--surface)] rounded-lg px-3 py-1 inline-block font-mono">
-                        /{group.slug}
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-2">
-                    <Button onClick={() => loadMembers(group.id)} variant="primary" size="sm">
-                      <span className="text-sm">👥</span> Voir les membres
-                    </Button>
-                    <ButtonLink href="/my-list" variant="accent" size="sm">
-                      <span className="text-sm">📝</span> Ma liste
-                    </ButtonLink>
-                    <Button onClick={() => renameGroup(group.id)} variant="ghost" size="sm">
-                      <span className="text-sm">✏️</span> Renommer
-                    </Button>
-                    <Button onClick={() => deleteGroup(group.id)} variant="danger" size="sm">
-                      <span className="text-sm">🗑️</span> Supprimer
-                    </Button>
-                  </div>
 
-                  {/* Members */}
-                  {members[group.id] && (
-                    <div className="border-t border-[var(--border)] pt-4">
-                      <h5 className="font-semibold mb-3 flex items-center gap-2 text-[var(--foreground)]">
-                        <span className="text-lg">👥</span>
-                        Membres du groupe
-                      </h5>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {members[group.id].map(member => (
-                          <div key={member.userId} className="bg-[var(--surface)] rounded-lg p-3 border border-[var(--border)]">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="text-xl">👤</div>
-                                <div>
-                                  <div className="font-medium text-[var(--foreground)]">{member.name}</div>
-                                  <div className="text-sm text-[var(--foreground-secondary)]">
-                                    {member.list ? `📝 ${member.list.title}` : '📝 Aucune liste'}
-                                  </div>
-                                </div>
-                              </div>
-                              {member.list && (
-                                <ButtonLink href={`/list/${member.list.id}`} size="sm" variant="outline">
-                                  <span className="text-sm">👀</span> Voir
-                                </ButtonLink>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+        {loading && groups.length === 0 ? (
+          <div className="text-center py-8 text-[var(--foreground-secondary)]">Chargement…</div>
+        ) : groups.length === 0 ? (
+          <div className="text-[var(--foreground-secondary)] text-sm">Aucun groupe. Créez-en un pour partager vos listes.</div>
+        ) : (
+          <ul className="space-y-2">
+            {groups.map((g) => (
+              <GroupCard key={g.id} id={g.id} name={g.name} membersCount={g.memberships.length} />
             ))}
-          </div>
+          </ul>
         )}
       </div>
-
-      <Modal 
-        open={!!confirm?.open} 
-        onClose={() => setConfirm(null)} 
-        title={confirm?.title} 
-        footer={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setConfirm(null)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={() => confirm?.onYes()}>
-              Supprimer
-            </Button>
-          </div>
-        }
-      >
-        <p className="text-[var(--foreground-secondary)]">
-          Cette action est irréversible.
-        </p>
-      </Modal>
     </div>
   );
 }

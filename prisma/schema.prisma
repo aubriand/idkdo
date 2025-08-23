@@ -31,6 +31,8 @@ model User {
   claims        Claim[]
   suggestions   Suggestion[]
   giftList      GiftList?
+  createdInvitations Invitation[] @relation("InvitationCreatedBy")
+  usedInvitations     Invitation[] @relation("InvitationUsedBy")
 
   @@unique([email])
   @@map("user")
@@ -93,6 +95,7 @@ model Group {
   owner     User      @relation("GroupOwner", fields: [ownerId], references: [id])
   // members relation
   memberships Membership[]
+  invites     Invitation[]
 
   @@map("group")
 }
@@ -178,4 +181,23 @@ model Suggestion {
   createdBy User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
   @@map("suggestion")
+}
+
+/// Invitation link to join a group
+model Invitation {
+  id           String   @id @default(cuid())
+  token        String   @unique
+  groupId      String
+  createdById  String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  usedAt       DateTime?
+  usedById     String?
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("InvitationCreatedBy", fields: [createdById], references: [id])
+  usedBy    User? @relation("InvitationUsedBy", fields: [usedById], references: [id])
+
+  @@map("invitation")
 }
