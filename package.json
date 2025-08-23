@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-  "lint": "eslint app --ext .ts,.tsx,.js,.mjs,.cjs"
+    "lint": "eslint app --ext .ts,.tsx,.js,.mjs,.cjs",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",
