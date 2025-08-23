@@ -3,6 +3,15 @@ import { redirect } from 'next/navigation';
 import { api } from '../lib/auth';
 import Header from '../components/Header';
 import GroupsClient from './GroupsClient';
+import { createMetadata } from "../lib/seo";
+
+export async function generateMetadata() {
+  return createMetadata({
+    title: "Mes groupes",
+    description: "Créez et rejoignez des groupes pour partager vos listes de cadeaux.",
+    path: "/groups",
+  });
+}
 
 export default async function GroupsPage() {
   try {

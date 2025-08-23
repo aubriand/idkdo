@@ -5,6 +5,15 @@ import { api } from "@/app/lib/auth";
 import { Card, CardContent, CardTitle } from "./components/ui/Card";
 import Image from "next/image";
 import Logo from "@/app/assets/IDKDO.png";
+import { createMetadata } from "@/app/lib/seo";
+
+export async function generateMetadata() {
+  return createMetadata({
+    title: "Accueil",
+    description: "Créez des listes de cadeaux, partagez vos envies et découvrez les idées de vos proches.",
+    path: "/",
+  });
+}
 
 type SessionData = { user: { id: string; name?: string | null; email?: string | null } } | null;
 export default async function HomePage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {

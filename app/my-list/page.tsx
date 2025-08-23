@@ -6,6 +6,15 @@ import MyListClient from './MyListClient';
 import { prisma } from "@/app/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import Button from "@/app/components/ui/Button";
+import { createMetadata } from '../lib/seo';
+
+export async function generateMetadata() {
+  return createMetadata({
+    title: "Ma liste de souhaits",
+    description: "Gérez vos idées de cadeaux et partagez-les avec votre famille.",
+    path: "/my-list",
+  });
+}
 
 export default async function MyListPage() {
   try {

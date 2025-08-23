@@ -7,6 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Ca
 import ButtonLink from '@/app/components/ui/ButtonLink';
 import InviteCopyButton from '@/app/components/InviteCopyButton';
 import OwnerActions from './OwnerActions';
+import { createMetadata } from '@/app/lib/seo';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  // minimal metadata; title will be finalized server-side after query if desired
+  return createMetadata({
+    title: 'Groupe — IDKDO',
+    description: 'Détails du groupe',
+    path: `/groups/${params.id}`,
+  });
+}
 
 export default async function GroupDetailsPage({ params }: { params: { id: string } }) {
   const session = await api.getSession({ headers: await headers() });
