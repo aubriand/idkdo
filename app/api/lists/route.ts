@@ -2,7 +2,7 @@ import { api } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
 import { headers } from 'next/headers';
 
-export async function GET(_req: Request) {
+export async function GET() {
   const session = await api.getSession({ headers: await headers() });
   if (!session) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 
@@ -22,7 +22,7 @@ export async function GET(_req: Request) {
   return new Response(JSON.stringify([list]), { status: 200 });
 }
 
-export async function POST(_req: Request) {
+export async function POST() {
   const session = await api.getSession({ headers: await headers() });
   if (!session) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 

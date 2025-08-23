@@ -15,8 +15,10 @@ export const auth = betterAuth({
   },
   plugins: [
     magicLink({
-      sendMagicLink: async ({ email, token, url }, request) => {
-        // Send the magic link email
+      sendMagicLink: async ({ email: _email, token: _token, url: _url }, _request) => {
+        // Mark as used to satisfy linting when not wiring an email service yet
+        void _email; void _token; void _url; void _request;
+        // TODO: implement email sending with your provider
       }
     }),
     oneTap()

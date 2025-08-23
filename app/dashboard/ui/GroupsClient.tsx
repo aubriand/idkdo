@@ -64,14 +64,14 @@ export default function GroupsClient() {
     } finally { setLoading(false); }
   }
 
-  async function loadLists(_groupId: string) {
+  async function loadLists() {
     try {
       const res = await fetch(`/api/lists`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       const data: GiftList[] = await res.json();
       // store under a fixed key since lists are per-user (single list)
       setLists(prev => ({ ...prev, ['me']: data }));
-    } catch (_e) { /* ignore for now */ }
+  } catch { /* ignore for now */ }
   }
   async function loadMembers(groupId: string) {
     try {
@@ -79,13 +79,10 @@ export default function GroupsClient() {
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       const data: Member[] = await res.json();
       setMembers(prev => ({ ...prev, [groupId]: data }));
-    } catch (_e) { /* ignore */ }
+    } catch { /* ignore */ }
   }
 
-  async function createList(_groupId: string, formData: FormData) {
-    // Lists are auto-created, this function is no longer needed
-    await loadLists('me');
-  }
+  // createList removed: lists are auto-created and can be fetched via loadLists()
 
   async function loadIdeas(listId: string) {
     try {
@@ -93,7 +90,7 @@ export default function GroupsClient() {
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       const data: Idea[] = await res.json();
       setIdeas(prev => ({ ...prev, [listId]: data }));
-    } catch (_e) { /* ignore */ }
+  } catch { /* ignore */ }
   }
 
   async function createIdea(listId: string, formData: FormData) {
@@ -115,7 +112,7 @@ export default function GroupsClient() {
   if (!res.ok) throw new Error('Erreur de création d\'idée');
       await loadIdeas(listId);
   success({ title: 'Idée ajoutée' });
-    } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
   }
 
   // Updates / Deletes
@@ -137,7 +134,7 @@ export default function GroupsClient() {
     if (!title) return;
     const res = await fetch(`/api/lists/${listId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title }) });
     if (res.ok) {
-      loadLists('me');
+  loadLists();
       success({ title: 'Liste renommée' });
     }
   }
@@ -210,7 +207,7 @@ export default function GroupsClient() {
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => loadLists('me')} variant="primary" size="sm">
+                  <Button onClick={() => loadLists()} variant="primary" size="sm">
                     <span className="text-sm">📝</span> Ma liste
                   </Button>
                   <Button onClick={() => loadMembers(g.id)} variant="secondary" size="sm">

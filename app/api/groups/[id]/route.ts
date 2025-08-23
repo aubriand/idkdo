@@ -1,12 +1,14 @@
 import { headers } from 'next/headers';
 import { api } from '@/app/lib/auth';
 import { prisma } from '@/app/lib/prisma';
+import type { NextRequest } from 'next/server';
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await api.getSession({ headers: await headers() });
   if (!session) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 
-  const group = await prisma.group.findUnique({ where: { id: params.id }, select: { id: true, ownerId: true, slug: true } });
+  const { id } = await params;
+  const group = await prisma.group.findUnique({ where: { id }, select: { id: true, ownerId: true, slug: true } });
   if (!group) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404 });
   if (group.ownerId !== session.user.id) return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
 
@@ -32,11 +34,12 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   return new Response(JSON.stringify(updated), { status: 200 });
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await api.getSession({ headers: await headers() });
   if (!session) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 
-  const group = await prisma.group.findUnique({ where: { id: params.id }, select: { id: true, ownerId: true } });
+  const { id } = await params;
+  const group = await prisma.group.findUnique({ where: { id }, select: { id: true, ownerId: true } });
   if (!group) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404 });
   if (group.ownerId !== session.user.id) return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
 

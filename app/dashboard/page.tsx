@@ -6,7 +6,6 @@ import SessionClient from './SessionClient';
 import Header from '../components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import ListItemCard from "../components/ListItemCard";
-import Link from 'next/link';
 import ButtonLink from '../components/ui/ButtonLink';
 import ClaimButton from "../components/ClaimButton";
 import GroupCard from "../components/GroupCard";
@@ -104,10 +103,7 @@ export default async function DashboardPage() {
       }
     }
 
-    const formatPrice = (cents: number | null | undefined) => {
-      if (cents == null) return null;
-      return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(cents / 100);
-    };
+  // price formatting handled inside cards where needed
 
     return (
   <div className="min-h-screen">

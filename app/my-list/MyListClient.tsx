@@ -8,12 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Ca
 import { useToast } from "@/app/components/ui/ToastProvider";
 
 type GiftList = { id: string; title: string; description?: string };
-type Idea = { 
-  id: string; 
-  title: string; 
-  listId: string; 
-  url?: string | null; 
-  image?: string | null; 
+type Idea = {
+  id: string;
+  title: string;
+  listId: string;
+  url?: string | null;
+  image?: string | null;
   priceCents?: number | null;
   notes?: string | null;
 };
@@ -91,7 +91,7 @@ export default function MyListClient() {
       await loadIdeas(list.id);
       success({ title: 'Idée ajoutée avec succès !' });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Impossible d\'ajouter l\'idée';
+  const msg = e instanceof Error ? e.message : 'Impossible d\'ajouter l\'idée';
       toastError({ title: 'Erreur', description: msg });
     }
   }
@@ -125,7 +125,7 @@ export default function MyListClient() {
             await loadIdeas(list.id); 
             success({ title: 'Idée supprimée !' }); 
           }
-        } catch (e) {
+      } catch {
           toastError({ title: 'Erreur', description: 'Impossible de supprimer l\'idée' });
         }
         setConfirm(null);
@@ -149,7 +149,7 @@ export default function MyListClient() {
         setList(prev => prev ? { ...prev, title } : null);
         success({ title: 'Liste renommée !' });
       }
-    } catch (e) {
+  } catch {
       toastError({ title: 'Erreur', description: 'Impossible de renommer la liste' });
     }
   }

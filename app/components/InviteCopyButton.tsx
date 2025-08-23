@@ -16,7 +16,7 @@ export default function InviteCopyButton({ groupId, size = "sm", variant = "prim
       const data = await res.json();
       await navigator.clipboard.writeText(data.url);
       success({ title: 'Lien copié', description: 'Invitation copiée dans le presse‑papiers.' });
-    } catch (e) {
+  } catch {
       error({ title: 'Erreur', description: 'Impossible de copier le lien.' });
     } finally {
       setLoading(false);

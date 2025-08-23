@@ -41,8 +41,7 @@ export default async function PublicListPage({ params }: { params: { id: string 
     select: { id: true, title: true, url: true, image: true, priceCents: true, createdAt: true, _count: { select: { claims: true } } },
   });
 
-  const formatPrice = (cents: number | null | undefined) =>
-    cents == null ? null : new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cents / 100);
+  // Price formatting is handled in display components when needed
 
   return (
     <div className="min-h-screen">

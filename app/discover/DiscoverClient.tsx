@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import Button from "@/app/components/ui/Button";
 import ButtonLink from "@/app/components/ui/ButtonLink";
-import Link from "next/link";
 
 type Group = { id: string; name: string; slug: string };
 type Member = { 

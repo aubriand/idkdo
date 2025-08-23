@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Button from "@/app/components/ui/Button";
 import Input from "@/app/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
@@ -16,11 +16,7 @@ export default function GroupsClient() {
   const { success, error: toastError } = useToast();
   const [joinInput, setJoinInput] = useState("");
 
-  useEffect(() => {
-    refreshGroups();
-  }, []);
-
-  async function refreshGroups() {
+  const refreshGroups = useCallback(async () => {
     setLoading(true); 
     setError(null);
     try {
@@ -35,7 +31,11 @@ export default function GroupsClient() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [toastError]);
+
+  useEffect(() => {
+    refreshGroups();
+  }, [refreshGroups]);
 
   async function createGroup(formData: FormData) {
     setError(null); 
