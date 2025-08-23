@@ -32,6 +32,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       select: { id: true },
     });
     await prisma.suggestion.update({ where: { id }, data: { status: 'accepted' } });
+    // Notify the suggester that their idea was accepted
+    try {
+      if (s.createdById && s.createdById !== session.user.id) {
+        const { sendPushToUser } = await import('@/app/lib/notify')
+        await sendPushToUser(s.createdById, { title: 'Suggestion acceptée', body: `${session.user.name || 'Le propriétaire'} a accepté votre idée` })
+      }
+    } catch {}
     return new Response(JSON.stringify({ accepted: true, ideaId: idea.id }), { status: 200 });
   }
   return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400 });

@@ -40,5 +40,24 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     return new Response(JSON.stringify({ claimed: false }), { status: 200 });
   }
   await prisma.claim.create({ data: { ideaId: id, userId: session.user.id } });
+  // Notify shared members (excluding list owner) that someone claimed the idea
+  try {
+    const members = await prisma.membership.findMany({
+      where: {
+        group: {
+          AND: [
+            { memberships: { some: { userId: session.user.id } } },
+            { memberships: { some: { userId: list.ownerId } } },
+          ],
+        },
+      },
+      select: { userId: true },
+    })
+    const recipients = Array.from(new Set(members.map(m => m.userId))).filter(uid => uid !== list.ownerId && uid !== session.user.id)
+    if (recipients.length) {
+      const { sendPushToUsers } = await import('@/app/lib/notify')
+      await sendPushToUsers(recipients, { title: 'Idée prise en charge', body: `${session.user.name || 'Un membre'} s\'occupe d\'une idée` })
+    }
+  } catch {}
   return new Response(JSON.stringify({ claimed: true }), { status: 201 });
 }

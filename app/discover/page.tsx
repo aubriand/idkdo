@@ -4,6 +4,8 @@ import { api } from '../lib/auth';
 import Header from '../components/Header';
 import DiscoverClient from './DiscoverClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DiscoverPage() {
   try {
     const session = await api.getSession({ 

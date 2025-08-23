@@ -3,12 +3,15 @@ import { redirect } from 'next/navigation';
 import { api } from '../lib/auth';
 import { prisma } from '../lib/prisma';
 import SessionClient from './SessionClient';
+import EnablePushButton from '../components/notifications/EnablePushButton';
 import Header from '../components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import ListItemCard from "../components/ListItemCard";
 import ButtonLink from '../components/ui/ButtonLink';
 import ClaimButton from "../components/ClaimButton";
 import GroupCard from "../components/GroupCard";
+
+export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   try {
@@ -176,6 +179,9 @@ export default async function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <SessionClient />
+                    <div className="mt-3">
+                      <EnablePushButton />
+                    </div>
                   </CardContent>
                 </Card>
 

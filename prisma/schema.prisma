@@ -33,6 +33,7 @@ model User {
   giftList      GiftList?
   createdInvitations Invitation[] @relation("InvitationCreatedBy")
   usedInvitations     Invitation[] @relation("InvitationUsedBy")
+  pushSubscriptions   PushSubscription[]
 
   @@unique([email])
   @@map("user")
@@ -200,4 +201,19 @@ model Invitation {
   usedBy    User? @relation("InvitationUsedBy", fields: [usedById], references: [id])
 
   @@map("invitation")
+}
+
+/// Web Push subscription per device for a user
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscription")
 }

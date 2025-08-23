@@ -9,12 +9,14 @@ import Button from "@/app/components/ui/Button";
 import { createMetadata } from '../lib/seo';
 
 export async function generateMetadata() {
-  return createMetadata({
+  return await createMetadata({
     title: "Ma liste de souhaits",
     description: "Gérez vos idées de cadeaux et partagez-les avec votre famille.",
     path: "/my-list",
   });
 }
+
+export const dynamic = 'force-dynamic';
 
 export default async function MyListPage() {
   try {

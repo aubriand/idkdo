@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { headers as nextHeaders } from 'next/headers';
 
-type H = Headers | Readonly<Headers> | Record<string, string> | undefined | null;
+type H = Headers | Readonly<Headers> | Record<string, string> | undefined | null | Promise<Headers>;
 
 export type SEOParams = {
   title: string;
@@ -12,13 +12,13 @@ export type SEOParams = {
   type?: 'website' | 'article' | 'profile' | 'book' | 'music.song' | 'music.album' | 'music.playlist' | 'music.radio_station' | 'video.movie' | 'video.episode' | 'video.tv_show' | 'video.other';
 };
 
-export function resolveBaseUrl(h?: H): string {
+export async function resolveBaseUrl(h?: H): Promise<string> {
   const env = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL;
   if (env) return env.replace(/\/$/, '');
   try {
-    // Prefer forwarded headers on proxies
-    const raw = h ?? nextHeaders();
-    const hs = raw instanceof Headers ? raw : new Headers(raw as Record<string, string>);
+  // Prefer forwarded headers on proxies
+  const raw = h ? (h instanceof Promise ? await h : h) : await nextHeaders();
+  const hs = raw instanceof Headers ? raw : new Headers(raw as Record<string, string>);
     const proto = (hs.get?.('x-forwarded-proto') || 'https').split(',')[0].trim();
     const host = (hs.get?.('x-forwarded-host') || hs.get?.('host') || 'localhost:3000').split(',')[0].trim();
     return `${proto}://${host}`;
@@ -37,7 +37,7 @@ export function toAbsoluteUrl(url: string | undefined, base: string): string | u
 }
 
 export async function createMetadata(params: SEOParams, h?: H): Promise<Metadata> {
-  const base = resolveBaseUrl(h);
+  const base = await resolveBaseUrl(h);
   const canonical = params.path ? new URL(params.path, base).toString() : base;
   const imageAbs = toAbsoluteUrl(params.image, base);
   const siteName = 'IDKDO';

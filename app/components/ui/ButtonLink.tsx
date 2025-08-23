@@ -10,6 +10,7 @@ type ButtonLinkProps = LinkProps & {
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   ariaLabel?: string;
+  prefetch?: boolean;
 };
 
 export default function ButtonLink({
@@ -19,6 +20,7 @@ export default function ButtonLink({
   size = "md",
   fullWidth = false,
   ariaLabel,
+  prefetch = true,
   ...props
 }: ButtonLinkProps) {
   const base =
@@ -39,6 +41,7 @@ export default function ButtonLink({
   return (
     <Link
       {...props}
+      prefetch={prefetch}
       aria-label={ariaLabel}
       className={[base, sizes[size], variants[variant], fullWidth ? "w-full" : "", className].join(" ")}
     >

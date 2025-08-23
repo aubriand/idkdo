@@ -37,5 +37,16 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ to
     where: { token },
     data: { active: false, usedAt: now, usedById: session.user.id },
   });
+  // Notify group owner and existing members (excluding the joiner)
+  try {
+    const group = await prisma.group.findUnique({ where: { id: invite.groupId }, select: { name: true, ownerId: true, memberships: { select: { userId: true } } } })
+    if (group) {
+      const recipients = Array.from(new Set([group.ownerId, ...group.memberships.map(m => m.userId)])).filter(id => id !== session.user.id)
+      if (recipients.length) {
+        const { sendPushToUsers } = await import('@/app/lib/notify')
+        await sendPushToUsers(recipients, { title: 'Nouveau membre', body: `${session.user.name || 'Quelqu\'un'} a rejoint \u00ab ${group.name} \u00bb` })
+      }
+    }
+  } catch {}
   return new Response(JSON.stringify({ joined: true, groupId: invite.groupId }), { status: 200 });
 }

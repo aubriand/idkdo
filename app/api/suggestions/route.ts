@@ -36,5 +36,13 @@ export async function POST(req: Request) {
       createdById: session.user.id,
     },
   });
+  // Notify list owner that someone suggested an idea
+  try {
+    const owner = list.ownerId
+    if (owner && owner !== session.user.id) {
+      const { sendPushToUser } = await import('@/app/lib/notify')
+      await sendPushToUser(owner, { title: 'Nouvelle suggestion', body: `${session.user.name || 'Un membre'} a proposé: ${String(title).trim()}` })
+    }
+  } catch {}
   return new Response(JSON.stringify(s), { status: 201 });
 }

@@ -6,12 +6,14 @@ import GroupsClient from './GroupsClient';
 import { createMetadata } from "../lib/seo";
 
 export async function generateMetadata() {
-  return createMetadata({
+  return await createMetadata({
     title: "Mes groupes",
     description: "Créez et rejoignez des groupes pour partager vos listes de cadeaux.",
     path: "/groups",
   });
 }
+
+export const dynamic = 'force-dynamic';
 
 export default async function GroupsPage() {
   try {

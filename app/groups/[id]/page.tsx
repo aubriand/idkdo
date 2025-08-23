@@ -12,12 +12,14 @@ import type { Metadata } from 'next';
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   // minimal metadata; title will be finalized server-side after query if desired
-  return createMetadata({
+  return await createMetadata({
     title: 'Groupe — IDKDO',
     description: 'Détails du groupe',
     path: `/groups/${params.id}`,
   });
 }
+
+export const dynamic = 'force-dynamic';
 
 export default async function GroupDetailsPage({ params }: { params: { id: string } }) {
   const session = await api.getSession({ headers: await headers() });

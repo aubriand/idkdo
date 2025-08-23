@@ -7,8 +7,10 @@ import Image from "next/image";
 import Logo from "@/app/assets/IDKDO.png";
 import { createMetadata } from "@/app/lib/seo";
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata() {
-  return createMetadata({
+  return await createMetadata({
     title: "Accueil",
     description: "Créez des listes de cadeaux, partagez vos envies et découvrez les idées de vos proches.",
     path: "/",

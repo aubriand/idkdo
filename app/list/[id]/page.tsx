@@ -5,9 +5,10 @@ import { prisma } from "@/app/lib/prisma";
 import Header from "@/app/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import ListItemCard from "@/app/components/ListItemCard";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import ClaimButton from "@/app/components/ClaimButton";
-const SuggestIdeaForm = dynamic(() => import("@/app/components/SuggestIdeaForm"));
+export const dynamic = 'force-dynamic';
+const SuggestIdeaForm = nextDynamic(() => import("@/app/components/SuggestIdeaForm"));
 
 export default async function PublicListPage({ params }: { params: { id: string } }) {
   const session = await api.getSession({ headers: await headers() });

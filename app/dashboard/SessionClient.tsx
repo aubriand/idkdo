@@ -29,7 +29,7 @@ export default function SessionClient() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-  <div className="w-16 h-16 mx-auto rounded-full overflow-hidden bg-[var(--primary)] p-0.5 shadow-sm">
+        <div className="w-16 h-16 mx-auto rounded-full overflow-hidden bg-[var(--primary)] p-0.5 shadow-sm">
           {session.user?.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={session.user.image} alt={session.user.name} className="w-full h-full object-cover rounded-full" />
@@ -37,7 +37,7 @@ export default function SessionClient() {
             <div className="w-full h-full flex items-center justify-center text-white text-xl bg-[var(--card-bg)] rounded-full">👤</div>
           )}
         </div>
-        
+
         <h3 className="text-lg font-semibold text-[var(--foreground)] mt-3 mb-1">
           {session.user?.name ?? "Membre de la famille"}
         </h3>
@@ -45,9 +45,9 @@ export default function SessionClient() {
           {session.user?.email}
         </p>
       </div>
-      
+
       <div className="bg-[var(--surface)] rounded-lg p-4 border border-[var(--border)]">
-        <Button onClick={signOut} variant="ghost" size="lg" className="w-full" disabled={loading}>
+        <Button onClick={signOut} variant="danger" size="lg" className="w-full" disabled={loading}>
           <span className="text-lg">👋</span>
           {loading ? "Déconnexion..." : "Se déconnecter"}
         </Button>

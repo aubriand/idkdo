@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ToastProvider from "./components/ui/ToastProvider";
+import { InstallPrompt } from "./components/notifications/InstallPrompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     siteName: "IDKDO",
     type: "website",
-  },
+  }
 };
 
 export default function RootLayout({
@@ -33,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Prevent theme flash: set .dark on html based on localStorage or system before React loads */}
         <script
           dangerouslySetInnerHTML={{
@@ -50,11 +52,13 @@ export default function RootLayout({
           `,
           }}
         />
+        <link rel="manifest" href="/manifest.webmanifest" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ToastProvider>
           {children}
         </ToastProvider>
+        <InstallPrompt />
       </body>
     </html>
   );
