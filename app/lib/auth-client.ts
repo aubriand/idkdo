@@ -11,7 +11,7 @@ export const authClient = createAuthClient({
       context: "signin",
       promptOptions: {
         baseDelay: 1000,
-        maxAttempts: 1
+        maxAttempts: 0
       }
     })
   ]

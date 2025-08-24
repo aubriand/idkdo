@@ -45,7 +45,14 @@ export const auth = betterAuth({
       },
     }),
     oneTap()
-  ]
+  ],
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"]
+    }
+  },
+  normalizeEmail: (email: string) => email.trim().toLowerCase()
 });
 
 export const { api } = auth;
