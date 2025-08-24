@@ -4,6 +4,7 @@ import React from "react";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Modal from "../components/ui/Modal";
+import { useFormStatus } from "react-dom";
 
 function seedFromName(name: string) {
   return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-_]/g, "");
@@ -23,7 +24,7 @@ const STYLES = [
   { id: 'shapes', name: 'Shapes' },
 ];
 
-export function ProfileClient({ initialName, initialImage, email, saveAction }: { initialName: string; initialImage: string; email: string; saveAction: (formData: FormData) => Promise<any>; }) {
+export function ProfileClient({ initialName, initialImage, email, saveAction }: { initialName: string; initialImage: string; email: string; saveAction: (formData: FormData) => Promise<{ ok: boolean; error?: string }> }) {
   const [name, setName] = React.useState(initialName);
   const [image, setImage] = React.useState(initialImage);
   const [open, setOpen] = React.useState(false);
@@ -144,6 +145,6 @@ export function ProfileClient({ initialName, initialImage, email, saveAction }: 
 
 
 function SubmitButton() {
-  const { pending } = require('react-dom').useFormStatus?.() ?? { pending: false };
+  const { pending } = useFormStatus?.() ?? { pending: false };
   return <Button type="submit" disabled={pending}>{pending ? 'Enregistrement…' : 'Enregistrer'}</Button>;
 }
