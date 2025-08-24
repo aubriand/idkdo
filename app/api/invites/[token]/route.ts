@@ -17,7 +17,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
 }
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
-  const session = await api.getSession({ headers: await headers() });
+  const session = await api.getSession({ headers: _req.headers });
+  console.log(session)
   if (!session) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   const { token } = await params;
   const invite = await prisma.invitation.findUnique({ where: { token } });
@@ -26,17 +27,17 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ to
     return new Response(JSON.stringify({ error: 'Invalid invite' }), { status: 404 });
   }
 
-  // create membership if not exists
-  await prisma.membership.upsert({
-    where: { userId_groupId: { userId: session.user.id, groupId: invite.groupId } },
-    create: { userId: session.user.id, groupId: invite.groupId, role: 'member' },
-    update: {},
-  });
   // mark invite used
   await prisma.invitation.update({
     where: { token },
     data: { active: false, usedAt: now, usedById: session.user.id },
   });
+
+  await prisma.group.update({
+    where: { id: invite.groupId },
+    data: { memberships: { create: { userId: session.user.id, role: 'member' } } }
+  });
+
   // Notify group owner and existing members (excluding the joiner)
   try {
     const group = await prisma.group.findUnique({ where: { id: invite.groupId }, select: { name: true, ownerId: true, memberships: { select: { userId: true } } } })

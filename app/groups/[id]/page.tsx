@@ -11,11 +11,12 @@ import { createMetadata } from '@/app/lib/seo';
 import type { Metadata } from 'next';
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const { id } = await params;
   // minimal metadata; title will be finalized server-side after query if desired
   return await createMetadata({
     title: 'Groupe — IDKDO',
     description: 'Détails du groupe',
-    path: `/groups/${params.id}`,
+    path: `/groups/${id}`,
   });
 }
 
@@ -23,9 +24,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function GroupDetailsPage({ params }: { params: { id: string } }) {
   const session = await api.getSession({ headers: await headers() });
+  const { id } = await params;
   if (!session) redirect('/');
   const group = await prisma.group.findUnique({
-    where: { id: params.id },
+    where: { id: id },
     include: { memberships: { include: { user: { select: { id: true, name: true, giftList: { select: { id: true, title: true } } } } } } }
   });
   if (!group) return notFound();
@@ -67,15 +69,15 @@ export default async function GroupDetailsPage({ params }: { params: { id: strin
               {group.memberships.length === 0 ? (
                 <div className="text-[var(--foreground-secondary)] text-sm">Aucun membre.</div>
               ) : (
-                <ul className="flex flex-col">
+                <ul className="flex flex-col gap-4">
                   {group.memberships.map((m) => (
                     <li key={m.user.id} className="bg-[var(--surface)] rounded-lg p-3 border border-[var(--border)] flex items-center justify-between">
                       <div className="min-w-0">
-                        <div className="font-medium text-[var(--foreground)] truncate">{m.user.name}</div>
+                        <div className="font-medium text-[var(--foreground)] truncate">{m.user.name} {session.user.id === m.userId && '(Vous)'}</div>
                         <div className="text-sm text-[var(--foreground-secondary)] truncate">{m.user.giftList ? `📝 ${m.user.giftList.title}` : '📝 Aucune liste'}</div>
                       </div>
                       {m.user.giftList && (
-                        <ButtonLink href={`/list/${m.user.giftList.id}`} size="sm" variant="secondary">Voir la liste</ButtonLink>
+                        <ButtonLink href={session.user.id === m.userId ? `/my-list` : `/list/${m.user.giftList.id}`} size="sm" variant="secondary">Voir la liste</ButtonLink>
                       )}
                     </li>
                   ))}

@@ -7,6 +7,7 @@ import { prisma } from "@/app/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import Button from "@/app/components/ui/Button";
 import { createMetadata } from '../lib/seo';
+import { revalidatePath } from 'next/cache';
 
 export async function generateMetadata() {
   return await createMetadata({
@@ -24,6 +25,37 @@ export default async function MyListPage() {
       headers: await headers()
     });
     if (!session) redirect('/');
+
+    // Helpers server actions
+    async function acceptSuggestion(id: string) {
+      'use server';
+      const h = await headers();
+      const base = `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
+      await fetch(`${base}/api/suggestions/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          cookie: h.get('cookie') ?? '',
+        },
+        body: JSON.stringify({ action: 'accept' }),
+      });
+      revalidatePath('/my-list');
+    }
+
+    async function rejectSuggestion(id: string) {
+      'use server';
+      const h = await headers();
+      const base = `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
+      await fetch(`${base}/api/suggestions/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          cookie: h.get('cookie') ?? '',
+        },
+        body: JSON.stringify({ action: 'reject' }),
+      });
+      revalidatePath('/my-list');
+    }
 
     // Fetch pending suggestions for this user's list
     const myList = await prisma.giftList.findUnique({ where: { ownerId: session.user.id } });
@@ -69,10 +101,10 @@ export default async function MyListPage() {
                             <div className="text-xs text-[var(--foreground-secondary)] truncate">Proposé par {s.createdBy?.name ?? 'Un membre'}</div>
                           </div>
                           <div className="flex gap-2">
-                            <form action={async () => { 'use server'; await fetch(`/api/suggestions/${s.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reject' }) }); }}>
+                            <form action={rejectSuggestion.bind(null, s.id)}>
                               <Button type="submit" size="sm" variant="outline">Refuser</Button>
                             </form>
-                            <form action={async () => { 'use server'; await fetch(`/api/suggestions/${s.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'accept' }) }); }}>
+                            <form action={acceptSuggestion.bind(null, s.id)}>
                               <Button type="submit" size="sm">Accepter</Button>
                             </form>
                           </div>
@@ -92,7 +124,7 @@ export default async function MyListPage() {
             </Card>
 
             {/* List Management */}
-            <MyListClient />
+            <MyListClient key={`ml-${suggestions.length}`} />
           </div>
         </main>
       </div>

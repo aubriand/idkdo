@@ -47,7 +47,7 @@
 
 /* Class-based dark mode overrides (takes precedence when `.dark` is on <html>) */
 .dark {
-  --background: #09090b; /* zinc-950 */
+  --background: #121214; /* zinc-950 */
   --background-secondary: #18181b; /* zinc-900 */
   --foreground: #fafafa; /* zinc-50 */
   --foreground-secondary: #a1a1aa; /* zinc-400 */

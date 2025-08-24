@@ -27,8 +27,9 @@ export default async function HomePage({ searchParams }: { searchParams?: Record
     console.error('Session check failed:', error);
   }
 
+  const { callbackUrl } = await searchParams as { callbackUrl?: string };
   if (session) {
-    const cb = typeof searchParams?.callbackUrl === 'string' ? searchParams!.callbackUrl : undefined;
+    const cb = typeof callbackUrl === 'string' ? callbackUrl : undefined;
     redirect(cb || '/dashboard');
   }
 

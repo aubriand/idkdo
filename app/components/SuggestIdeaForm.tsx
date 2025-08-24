@@ -11,7 +11,8 @@ export default function SuggestIdeaForm({ listId }: { listId: string }) {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true); setError(null);
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     const payload: {
       listId: string;
       title: string;
@@ -38,7 +39,7 @@ export default function SuggestIdeaForm({ listId }: { listId: string }) {
         const b = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(b.error || 'Erreur');
       }
-      e.currentTarget.reset();
+      form.reset();
     } catch (err) {
       const e = err as Error;
       setError(e.message || 'Erreur');
@@ -50,7 +51,7 @@ export default function SuggestIdeaForm({ listId }: { listId: string }) {
   return (
     <form onSubmit={onSubmit} className="grid gap-3 bg-[var(--surface)] rounded-xl p-4 border border-[var(--border)]">
       <h4 className="font-semibold text-[var(--foreground)]">Proposer une idée</h4>
-  <Input name="title" label="Nom de l'idée" required placeholder="Écharpe en laine" />
+      <Input name="title" label="Nom de l'idée" required placeholder="Écharpe en laine" />
       <div className="grid md:grid-cols-2 gap-3">
         <Input name="url" label="Lien (optionnel)" placeholder="https://…" />
         <Input name="image" label="Image (URL)" placeholder="https://…/photo.jpg" />

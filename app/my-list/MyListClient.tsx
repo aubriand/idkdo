@@ -229,8 +229,9 @@ export default function MyListClient() {
         <CardContent>
           <form onSubmit={async (e) => { 
             e.preventDefault(); 
-            await createIdea(new FormData(e.currentTarget)); 
-            e.currentTarget.reset(); 
+            const form = e.currentTarget;
+            await createIdea(new FormData(form)); 
+            form.reset(); 
           }} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <Input 
@@ -293,8 +294,8 @@ export default function MyListClient() {
           <div className="grid gap-6 md:grid-cols-2">
             {ideas.map(idea => (
               <Card key={idea.id} className="hover:shadow-lg transition-all duration-200">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
+                <CardContent className="p-3!">
+                  <div className="flex h-full items-center gap-4">
                     {idea.image && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img 

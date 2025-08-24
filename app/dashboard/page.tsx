@@ -10,12 +10,13 @@ import ListItemCard from "../components/ListItemCard";
 import ButtonLink from '../components/ui/ButtonLink';
 import ClaimButton from "../components/ClaimButton";
 import GroupCard from "../components/GroupCard";
+import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   try {
-    const session = await api.getSession({ 
+    const session = await api.getSession({
       headers: await headers()
     });
     if (!session) redirect('/');
@@ -96,7 +97,7 @@ export default async function DashboardPage() {
               url: i.url ?? null,
               priceCents: i.priceCents ?? null,
               createdAt: i.createdAt,
-        listId: i.listId,
+              listId: i.listId,
               ownerName: owner?.name ?? null,
               ownerImage: owner?.image ?? null,
               claimsCount: (i as { _count?: { claims?: number } })._count?.claims ?? 0,
@@ -106,10 +107,10 @@ export default async function DashboardPage() {
       }
     }
 
-  // price formatting handled inside cards where needed
+    // price formatting handled inside cards where needed
 
     return (
-  <div className="min-h-screen">
+      <div className="min-h-screen">
         <Header />
         <main className="container py-8">
           <div className="max-w-6xl mx-auto space-y-8">
@@ -161,7 +162,7 @@ export default async function DashboardPage() {
                             <ListItemCard item={{ id: i.id, title: i.title, image: i.image ?? null, url: i.url ?? null, priceCents: i.priceCents ?? null, createdAt: i.createdAt, ownerName: i.ownerName ?? null, claimsCount: i.claimsCount ?? 0 }} />
                             <div className="flex items-center justify-between">
                               <ClaimButton ideaId={i.id} />
-                              <ButtonLink href={`/list/${i.listId}`} size="sm" variant="secondary">Voir la liste</ButtonLink>
+                              <ButtonLink href={`/list/${i.listId}`} size="sm" variant="outline">Voir la liste</ButtonLink>
                             </div>
                           </li>
                         ))}

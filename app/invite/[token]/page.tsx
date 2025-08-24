@@ -38,13 +38,13 @@ export default async function InvitePage({ params }: { params: { token: string }
     // if not authenticated, redirect to login then back here
     const s = await api.getSession({ headers: await headers() });
     if (!s) {
-      redirect(`/?callbackUrl=${encodeURIComponent(`/invite/${params.token}`)}`);
+      redirect(`/?callbackUrl=${encodeURIComponent(`/invite/${token}`)}`);
     }
     const hh = await headers();
     const p = hh.get('x-forwarded-proto') ?? 'http';
     const ho = hh.get('host');
     const b = process.env.NEXT_PUBLIC_BASE_URL ?? (ho ? `${p}://${ho}` : '');
-    await fetch(`${b}/api/invites/${params.token}`, { method: 'POST' });
+    await fetch(`${b}/api/invites/${token}`, { method: 'POST', headers: { cookie: hh.get('cookie') ?? '' } });
     redirect('/groups');
   }
 

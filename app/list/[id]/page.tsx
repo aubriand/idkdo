@@ -11,12 +11,13 @@ export const dynamic = 'force-dynamic';
 const SuggestIdeaForm = nextDynamic(() => import("@/app/components/SuggestIdeaForm"));
 
 export default async function PublicListPage({ params }: { params: { id: string } }) {
+  const { id } = await params;
   const session = await api.getSession({ headers: await headers() });
   if (!session) redirect("/");
 
   // Access: allow if this list belongs to a user who shares a group with me, or it's mine
   const list = await prisma.giftList.findUnique({
-    where: { id: params.id },
+    where: { id: id },
     include: { owner: { select: { id: true, name: true, image: true } } },
   });
   if (!list) return notFound();
