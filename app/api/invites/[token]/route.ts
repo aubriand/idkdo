@@ -9,8 +9,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
     where: { token },
     include: { group: { select: { id: true, name: true, slug: true } } },
   });
-  const now = new Date();
-  if (!invite || !invite.active || (invite.expiresAt && invite.expiresAt < now) || invite.usedAt) {
+  if (!invite || !invite.active) {
     return new Response(JSON.stringify({ error: 'Invalid invite' }), { status: 404 });
   }
   return new Response(JSON.stringify({ group: invite.group }), { status: 200 });
@@ -22,16 +21,18 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ to
   if (!session) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   const { token } = await params;
   const invite = await prisma.invitation.findUnique({ where: { token } });
-  const now = new Date();
-  if (!invite || !invite.active || (invite.expiresAt && invite.expiresAt < now) || invite.usedAt) {
+  if (!invite || !invite.active) {
     return new Response(JSON.stringify({ error: 'Invalid invite' }), { status: 404 });
   }
 
-  // mark invite used
-  await prisma.invitation.update({
-    where: { token },
-    data: { active: false, usedAt: now, usedById: session.user.id },
+  // Check if user is already a member
+  const existingMembership = await prisma.membership.findUnique({
+    where: { userId_groupId: { userId: session.user.id, groupId: invite.groupId } }
   });
+  
+  if (existingMembership) {
+    return new Response(JSON.stringify({ error: 'Already a member' }), { status: 409 });
+  }
 
   await prisma.group.update({
     where: { id: invite.groupId },

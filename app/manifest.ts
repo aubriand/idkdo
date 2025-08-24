@@ -21,5 +21,14 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#ffffff",
     display: "standalone",
     start_url: "/",
+    share_target: {
+      action: "/",
+      method: "GET",
+      params: {
+        title: "title",
+        text: "text",
+        url: "url",
+      },
+    },
   };
 }

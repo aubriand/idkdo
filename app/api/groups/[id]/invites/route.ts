@@ -22,9 +22,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (!canCreate) return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
 
   const token = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const invite = await prisma.invitation.create({
-    data: { token, groupId: id, createdById: session.user.id, expiresAt },
+    data: { token, groupId: id, createdById: session.user.id },
   });
 
   const h = await headers();

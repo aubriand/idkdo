@@ -1,5 +1,5 @@
 import Link from "next/link";
-import InviteCopyButton from "./InviteCopyButton";
+import ShareButton from "./ShareButton";
 
 export default function GroupCard({ id, name, membersCount }: { id: string; name: string; membersCount: number }) {
   return (
@@ -9,7 +9,7 @@ export default function GroupCard({ id, name, membersCount }: { id: string; name
         <div className="text-xs text-[var(--foreground-secondary)]">{membersCount} membre{membersCount > 1 ? 's' : ''}</div>
       </div>
       <div className="flex items-center gap-2">
-        <InviteCopyButton groupId={id} size="sm" variant="secondary">🔗 Copier</InviteCopyButton>
+        <ShareButton groupId={id}>🔗 Partager</ShareButton>
         <Link href={`/groups/${id}`} className="inline-flex items-center h-8 px-3 rounded-md border border-[var(--border)] bg-[var(--surface)] text-sm">Ouvrir</Link>
       </div>
     </li>

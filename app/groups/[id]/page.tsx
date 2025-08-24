@@ -5,7 +5,7 @@ import { prisma } from '@/app/lib/prisma';
 import Header from '@/app/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import ButtonLink from '@/app/components/ui/ButtonLink';
-import InviteCopyButton from '@/app/components/InviteCopyButton';
+import ShareButton from '@/app/components/ShareButton';
 import OwnerActions from './OwnerActions';
 import { createMetadata } from '@/app/lib/seo';
 import type { Metadata } from 'next';
@@ -47,7 +47,7 @@ export default async function GroupDetailsPage({ params }: { params: { id: strin
               <CardTitle className="flex items-center gap-2"><span>🎪</span> {group.name}</CardTitle>
               <div className="flex gap-2 items-center">
                 {isOwner && <OwnerActions groupId={group.id} initialName={group.name} />}
-                <InviteCopyButton groupId={group.id} />
+                <ShareButton groupId={group.id} />
                 <ButtonLink href="/groups" variant="outline" size="sm">Retour</ButtonLink>
               </div>
             </CardHeader>
