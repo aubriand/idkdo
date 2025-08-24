@@ -52,7 +52,31 @@ export const auth = betterAuth({
       trustedProviders: ["google"]
     }
   },
-  normalizeEmail: (email: string) => email.trim().toLowerCase()
+  normalizeEmail: (email: string) => email.trim().toLowerCase(),
+  // Auto-generate a Dicebear avatar if none exists after user creation/login.
+  events: {
+    async afterUserCreation({ user }: { user: { id: string; name?: string | null; email?: string | null; image?: string | null } }) {
+      if (!user) return;
+      const hasDicebear = (url?: string | null) => {
+        if (!url) return false;
+        try {
+          const u = new URL(url);
+          return u.hostname === 'api.dicebear.com' && u.pathname.startsWith('/9.x/');
+        } catch {
+          return false;
+        }
+      };
+      if (!hasDicebear(user.image)) {
+        const seed = (user.name || user.email || 'user').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '') || 'user';
+        const image = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(seed)}`;
+        try {
+          await prisma.user.update({ where: { id: user.id }, data: { image, updatedAt: new Date() } });
+        } catch (e) {
+          console.error('Failed to set default avatar:', e);
+        }
+      }
+    },
+  }
 });
 
 export const { api } = auth;

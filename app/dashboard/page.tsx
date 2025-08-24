@@ -21,6 +21,24 @@ export default async function DashboardPage() {
     });
     if (!session) redirect('/');
 
+    // Ensure a Dicebear avatar exists (first sign-in or non-Dicebear image)
+    const makeSeed = (s: string) => s.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '') || 'user';
+    const isDicebear = (url?: string | null) => {
+      if (!url) return false;
+      try {
+        const u = new URL(url);
+        return u.hostname === 'api.dicebear.com' && u.pathname.startsWith('/9.x/');
+      } catch {
+        return false;
+      }
+    };
+    if (!isDicebear(session.user.image)) {
+      const seed = makeSeed(session.user.name || session.user.email || 'user');
+      const image = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(seed)}`;
+      await prisma.user.update({ where: { id: session.user.id }, data: { image, updatedAt: new Date() }, select: { id: true } });
+      // Re-fetch session? keep lightweight: UI reads image via session, but it's fine if it shows after next load.
+    }
+
     // Ensure the user's list exists, then fetch latest items
     let myList = await prisma.giftList.findUnique({
       where: { ownerId: session.user.id },
@@ -182,6 +200,9 @@ export default async function DashboardPage() {
                     <SessionClient />
                     <div className="mt-3">
                       <EnablePushButton />
+                    </div>
+                    <div className="mt-3">
+                      <ButtonLink href="/profile" size="sm" variant="outline">Modifier mon profil</ButtonLink>
                     </div>
                   </CardContent>
                 </Card>

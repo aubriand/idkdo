@@ -30,6 +30,7 @@ export default function Header() {
     { name: "Tableau de bord", href: "/dashboard", icon: "🏠" },
     { name: "Ma liste", href: "/my-list", icon: "🎁" },
     { name: "Groupes", href: "/groups", icon: "👥" },
+  { name: "Mon profil", href: "/profile", icon: "👤" },
   ];
 
   return (
