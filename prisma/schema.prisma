@@ -140,6 +140,7 @@ model Idea {
   listId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  hiddenForOwner Boolean @default(false)
 
   createdBy User     @relation("UserCreatedIdeas", fields: [createdById], references: [id])
   list      GiftList @relation(fields: [listId], references: [id])

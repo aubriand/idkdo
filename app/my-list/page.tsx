@@ -57,12 +57,11 @@ export default async function MyListPage() {
       revalidatePath('/my-list');
     }
 
-    // Fetch pending suggestions for this user's list
+    // Fetch ideas for this user's list, only those not hidden for owner
     const myList = await prisma.giftList.findUnique({ where: { ownerId: session.user.id } });
-    const suggestions = myList ? await prisma.suggestion.findMany({
-      where: { listId: myList.id, status: 'pending' },
+    const ideas = myList ? await prisma.idea.findMany({
+      where: { listId: myList.id, hiddenForOwner: false },
       orderBy: { createdAt: 'desc' },
-      include: { createdBy: { select: { name: true, image: true } } },
     }) : [];
 
     return (
@@ -83,37 +82,24 @@ export default async function MyListPage() {
               </div>
             </div>
 
-            {/* Suggestions Review */}
+            {/* List Management */}
             <Card>
               <CardHeader>
-                <CardTitle>Suggestions à valider</CardTitle>
+                <CardTitle>Mes idées</CardTitle>
               </CardHeader>
               <CardContent>
-                {suggestions.length === 0 ? (
-                  <div className="text-[var(--foreground-secondary)] text-sm">Aucune suggestion en attente.</div>
+                {ideas.length === 0 ? (
+                  <div className="text-[var(--foreground-secondary)] text-sm">Aucune idée dans votre liste.</div>
                 ) : (
                   <ul className="space-y-2">
-                    {suggestions.map((s) => (
-                      <li key={s.id} className="rounded-md border border-[var(--border)] bg-[var(--card-bg)] p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="min-w-0">
-                            <div className="font-medium truncate">{s.title}</div>
-                            <div className="text-xs text-[var(--foreground-secondary)] truncate">Proposé par {s.createdBy?.name ?? 'Un membre'}</div>
-                          </div>
-                          <div className="flex gap-2">
-                            <form action={rejectSuggestion.bind(null, s.id)}>
-                              <Button type="submit" size="sm" variant="outline">Refuser</Button>
-                            </form>
-                            <form action={acceptSuggestion.bind(null, s.id)}>
-                              <Button type="submit" size="sm">Accepter</Button>
-                            </form>
-                          </div>
-                        </div>
-                        {(s.url || s.image || s.notes) && (
+                    {ideas.map((i) => (
+                      <li key={i.id} className="rounded-md border border-[var(--border)] bg-[var(--card-bg)] p-3">
+                        <div className="font-medium truncate">{i.title}</div>
+                        {(i.url || i.image || i.notes) && (
                           <div className="mt-2 text-sm text-[var(--foreground-secondary)] space-y-1">
-                            {s.url ? (<div><a className="text-[var(--primary)] hover:underline" href={s.url} target="_blank" rel="noreferrer">Lien</a></div>) : null}
-                            {s.image ? (<div className="flex items-center gap-2"><span>Image:</span><span className="truncate">{s.image}</span></div>) : null}
-                            {s.notes ? (<div className="truncate">{s.notes}</div>) : null}
+                            {i.url ? (<div><a className="text-[var(--primary)] hover:underline" href={i.url} target="_blank" rel="noreferrer">Lien</a></div>) : null}
+                            {i.image ? (<div className="flex items-center gap-2"><span>Image:</span><span className="truncate">{i.image}</span></div>) : null}
+                            {i.notes ? (<div className="truncate">{i.notes}</div>) : null}
                           </div>
                         )}
                       </li>
@@ -124,7 +110,7 @@ export default async function MyListPage() {
             </Card>
 
             {/* List Management */}
-            <MyListClient key={`ml-${suggestions.length}`} />
+            <MyListClient key={`ml-${ideas.length}`} />
           </div>
         </main>
       </div>

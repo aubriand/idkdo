@@ -16,7 +16,8 @@ async function getIdeaAccess(userId: string, ideaId: string) {
   if (!idea) return { status: 404 as const };
   const list = await prisma.giftList.findUnique({ where: { id: idea.listId }, select: { ownerId: true } });
   if (!list) return { status: 404 as const };
-  if (list.ownerId !== userId) return { status: 403 as const };
+  // Autorise le propriétaire de la liste OU le créateur de l'idée
+  if (list.ownerId !== userId && idea.createdById !== userId) return { status: 403 as const };
   return { status: 200 as const, idea };
 }
 

@@ -12,6 +12,7 @@ export type ListItem = {
   ownerName?: string | null;
   ownerImage?: string | null;
   claimsCount?: number | null;
+  creatorName?: string | null;
 };
 
 export default function ListItemCard({ item, onEdit, onDelete }: { item: ListItem; onEdit?: (id: string) => void; onDelete?: (id: string) => void; }) {
@@ -37,6 +38,9 @@ export default function ListItemCard({ item, onEdit, onDelete }: { item: ListIte
             {item.createdAt ? new Date(item.createdAt).toLocaleDateString('fr-FR') : ''}
           </div>
         )}
+        {item.creatorName && item.ownerName && item.creatorName !== item.ownerName ? (
+          <div className="text-xs text-[var(--primary)] mt-1">Ajouté par {item.creatorName}</div>
+        ) : null}
       </div>
       <div className="flex items-center gap-2">
         {item.claimsCount && item.claimsCount > 0 ? (
@@ -49,10 +53,10 @@ export default function ListItemCard({ item, onEdit, onDelete }: { item: ListIte
       {(onEdit || onDelete) && (
         <div className="flex gap-1 ml-2">
           {onEdit && (
-            <button onClick={() => onEdit(item.id)} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-[var(--border)] hover:bg-[var(--surface)]" aria-label="Modifier">✏️</button>
+            <button onClick={() => onEdit(item.id)} className="cursor-pointer h-8 w-8 inline-flex items-center justify-center rounded-md border border-[var(--border)] hover:bg-[var(--surface)]" aria-label="Modifier">✏️</button>
           )}
           {onDelete && (
-            <button onClick={() => onDelete(item.id)} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-[var(--border)] text-[var(--error)] hover:bg-[var(--surface)]" aria-label="Supprimer">🗑️</button>
+            <button onClick={() => onDelete(item.id)} className="cursor-pointer h-8 w-8 inline-flex items-center justify-center rounded-md border border-[var(--border)] text-[var(--error)] hover:bg-[var(--surface)]" aria-label="Supprimer">🗑️</button>
           )}
         </div>
       )}

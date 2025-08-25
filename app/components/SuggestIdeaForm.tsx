@@ -3,10 +3,12 @@
 import * as React from "react";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
+import { useRouter } from "next/navigation";
 
 export default function SuggestIdeaForm({ listId }: { listId: string }) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const router = useRouter();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,7 +32,7 @@ export default function SuggestIdeaForm({ listId }: { listId: string }) {
     const priceStr = String(fd.get('price') || '').trim();
     if (priceStr) payload.priceCents = Math.round(parseFloat(priceStr.replace(',', '.')) * 100);
     try {
-      const res = await fetch('/api/suggestions', {
+      const res = await fetch('/api/ideas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -40,6 +42,7 @@ export default function SuggestIdeaForm({ listId }: { listId: string }) {
         throw new Error(b.error || 'Erreur');
       }
       form.reset();
+      router.refresh();
     } catch (err) {
       const e = err as Error;
       setError(e.message || 'Erreur');

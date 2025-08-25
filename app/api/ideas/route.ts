@@ -41,10 +41,26 @@ export async function POST(req: Request) {
   const listId = body.listId;
   if (!title || !listId) return new Response(JSON.stringify({ error: 'title and listId required' }), { status: 400 });
 
-  // Only the owner of the list can add ideas
   const list = await prisma.giftList.findUnique({ where: { id: listId }, select: { ownerId: true } });
   if (!list) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404 });
-  if (list.ownerId !== session.user.id) return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+
+  let hiddenForOwner = false;
+  if (list.ownerId !== session.user.id) {
+    // Vérifier que l'utilisateur et le propriétaire partagent un groupe
+    const shared = await prisma.group.findFirst({
+      where: {
+        memberships: {
+          some: { userId: session.user.id },
+        },
+        AND: [
+          { memberships: { some: { userId: list.ownerId } } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (!shared) return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+    hiddenForOwner = true;
+  }
 
   const idea = await prisma.idea.create({
     data: {
@@ -55,6 +71,7 @@ export async function POST(req: Request) {
       image: body.image || null,
       createdById: session.user.id,
       listId,
+      hiddenForOwner,
     }
   });
 
