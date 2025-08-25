@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Button from "@/app/components/ui/Button";
 import Input from "@/app/components/ui/Input";
 import Modal from "@/app/components/ui/Modal";
+import SuggestIdeaForm from "@/app/components/SuggestIdeaForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import { useToast } from "@/app/components/ui/ToastProvider";
 
@@ -368,36 +369,25 @@ export default function MyListClient() {
         open={!!editingIdea} 
         onClose={() => setEditingIdea(null)} 
         title="Modifier l'idée"
-        footer={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setEditingIdea(null)}>
-              Annuler
-            </Button>
-            <Button 
-              variant="primary" 
-              onClick={() => {
-                if (editingIdea) {
-                  const title = prompt('Nouveau nom:', editingIdea.title);
-                  if (title) {
-                    updateIdea(editingIdea.id, { title });
-                    setEditingIdea(null);
-                  }
-                }
-              }}
-            >
-              Modifier
-            </Button>
-          </div>
-        }
+        footer={null}
       >
         {editingIdea && (
           <div className="space-y-4">
-            <div>
-              <strong>Nom actuel:</strong> {editingIdea.title}
-            </div>
-            <p className="text-[var(--foreground-secondary)]">
-              Utilisez le bouton "Modifier" pour changer le nom de cette idée.
-            </p>
+            <SuggestIdeaForm
+              listId={editingIdea.listId}
+              initialValues={{
+                title: editingIdea.title,
+                url: editingIdea.url || "",
+                image: editingIdea.image || "",
+                notes: editingIdea.notes || "",
+                priceCents: editingIdea.priceCents || undefined,
+              }}
+              mode="edit"
+              onSubmit={async (data: any) => {
+                await updateIdea(editingIdea.id, data);
+                setEditingIdea(null);
+              }}
+            />
           </div>
         )}
       </Modal>

@@ -17,7 +17,7 @@ export default function Modal({ open, onClose, title, children, footer }: ModalP
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0" style={{ background: 'var(--overlay)' }} onClick={onClose} />
-      <div className="relative w-full max-w-lg rounded-lg border border-[var(--border)] bg-[var(--card-bg)] p-4 shadow-lg">
+      <div className="relative w-full max-w-5xl rounded-lg border border-[var(--border)] bg-[var(--card-bg)] p-4 shadow-lg">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-base font-semibold">{title}</h3>
           <button onClick={onClose} className="text-[var(--foreground-secondary)] hover:text-[var(--foreground)]">✕</button>
