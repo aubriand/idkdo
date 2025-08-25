@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Modal from "../components/ui/Modal";
@@ -24,7 +25,8 @@ const STYLES = [
   { id: 'shapes', name: 'Shapes' },
 ];
 
-export function ProfileClient({ initialName, initialImage, email, saveAction }: { initialName: string; initialImage: string; email: string; saveAction: (formData: FormData) => Promise<{ ok: boolean; error?: string }> }) {
+export function ProfileClient({ initialName, initialImage, email }: { initialName: string; initialImage: string; email: string }) {
+  const queryClient = useQueryClient();
   const [name, setName] = React.useState(initialName);
   const [image, setImage] = React.useState(initialImage);
   const [open, setOpen] = React.useState(false);
@@ -81,8 +83,28 @@ export function ProfileClient({ initialName, initialImage, email, saveAction }: 
     }
   }
 
+  // Mutation pour sauvegarder le profil
+  const saveMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        body: formData
+      });
+      if (!res.ok) throw new Error('Erreur sauvegarde profil');
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    }
+  });
+
+
   return (
-    <form className="space-y-6" action={saveAction as unknown as (formData: FormData) => void}>
+    <form className="space-y-6" onSubmit={async (e) => {
+      e.preventDefault();
+      const form = e.currentTarget;
+      await saveMutation.mutateAsync(new FormData(form));
+    }}>
       <div className="flex items-center gap-4">
         <div className="w-16 h-16 rounded-full overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}

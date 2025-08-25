@@ -1,26 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import { authClient } from "@/app/lib/auth-client";
+import { useMutation, useQuery } from '@tanstack/react-query';
 import Button from "../components/ui/Button";
 
 export default function SessionClient() {
-  const { data: session, isPending } = authClient.useSession();
-  const [loading, setLoading] = useState(false);
-
-  async function signOut() {
-    setLoading(true);
-    try {
-      if (authClient.signOut) {
-        await authClient.signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/"; } } } as unknown as { fetchOptions?: { onSuccess?: () => void } });
-        return;
-      }
-
-      await fetch('/api/auth/sign-out', { method: 'POST' });
-      window.location.href = "/";
-    } finally {
-      setLoading(false);
+  // Query pour la session
+  const { data: session, isLoading: isPending } = useQuery({
+    queryKey: ['session'],
+    queryFn: async () => {
+      const res = await authClient.getSession();
+      if (res.error) throw new Error('Erreur session');
+      return res.data;
     }
+  });
+  // Mutation pour déconnexion
+  const signOutMutation = useMutation({
+    mutationFn: async () => {
+      await authClient.signOut();
+      window.location.href = "/";
+    }
+  });
+
+  function signOut() {
+    signOutMutation.mutate();
   }
 
   if (isPending) return <div className="text-center text-[var(--foreground-secondary)]">Connexion...</div>;
@@ -47,9 +50,9 @@ export default function SessionClient() {
       </div>
 
       <div className="bg-[var(--surface)] rounded-lg p-4 border border-[var(--border)]">
-        <Button onClick={signOut} variant="danger" size="lg" className="w-full" disabled={loading}>
+        <Button onClick={signOut} variant="danger" size="lg" className="w-full" disabled={signOutMutation.isPending}>
           <span className="text-lg">👋</span>
-          {loading ? "Déconnexion..." : "Se déconnecter"}
+          {signOutMutation.isPending ? "Déconnexion..." : "Se déconnecter"}
         </Button>
       </div>
     </div>

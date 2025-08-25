@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Button from "@/app/components/ui/Button";
 import Input from "@/app/components/ui/Input";
 import Modal from "@/app/components/ui/Modal";
@@ -20,60 +21,50 @@ type Idea = {
 };
 
 export default function MyListClient() {
-  const [list, setList] = useState<GiftList | null>(null);
-  const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const { success, error: toastError } = useToast();
+
+  // Fetch list
+  const {
+    data: list,
+    isLoading: loadingList,
+    error: listError
+  } = useQuery<GiftList | null>({
+    queryKey: ['my-list'],
+    queryFn: async () => {
+      const res = await fetch('/api/lists', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Erreur ${res.status}`);
+      const data: GiftList[] = await res.json();
+      return data.length > 0 ? data[0] : null;
+    }
+  });
+
+  // Fetch ideas
+  const {
+    data: ideas = [],
+    isLoading: loadingIdeas,
+    error: ideasError
+  } = useQuery<Idea[]>({
+    queryKey: ['ideas', list?.id],
+    queryFn: async () => {
+      if (!list?.id) return [];
+      const res = await fetch(`/api/ideas?listId=${encodeURIComponent(list.id)}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Erreur ${res.status}`);
+      return await res.json();
+    },
+    enabled: !!list?.id
+  });
 
   // modal state
   const [confirm, setConfirm] = useState<{ open: boolean; title: string; onYes: () => void } | null>(null);
   const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
 
-  const loadMyList = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/lists', { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data: GiftList[] = await res.json();
-      if (data.length > 0) {
-        setList(data[0]);
-        void loadIdeas(data[0].id);
-      }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Erreur lors du chargement';
-      setError(msg);
-      toastError({ title: 'Erreur', description: msg });
-    } finally {
-      setLoading(false);
-    }
-  }, [toastError]);
-
-  useEffect(() => {
-    loadMyList();
-  }, [loadMyList]);
-
-  
-
-  async function loadIdeas(listId: string) {
-    try {
-      const res = await fetch(`/api/ideas?listId=${encodeURIComponent(listId)}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data: Idea[] = await res.json();
-      setIdeas(data);
-    } catch (e: unknown) {
-      console.error('Error loading ideas:', e);
-    }
-  }
-
-  async function createIdea(formData: FormData) {
-    if (!list) return;
-    
-    try {
+  // Mutation pour créer une idée
+  const createIdeaMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      if (!list) throw new Error('Liste introuvable');
       const priceStr = String(formData.get('price') || '').trim();
       const priceCents = priceStr ? Math.round(parseFloat(priceStr.replace(',', '.')) * 100) : undefined;
-      
       const res = await fetch('/api/ideas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,76 +77,76 @@ export default function MyListClient() {
           ...(priceCents !== undefined ? { priceCents } : {})
         })
       });
-      
       if (!res.ok) throw new Error('Erreur de création d\'idée');
-      
-      await loadIdeas(list.id);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ideas', list?.id] });
       success({ title: 'Idée ajoutée avec succès !' });
-    } catch (e: unknown) {
-  const msg = e instanceof Error ? e.message : 'Impossible d\'ajouter l\'idée';
-      toastError({ title: 'Erreur', description: msg });
+    },
+    onError: (e: Error) => {
+      toastError({ title: 'Erreur', description: e.message || 'Impossible d\'ajouter l\'idée' });
     }
-  }
+  });
 
-  async function updateIdea(ideaId: string, data: Partial<Idea>) {
-    try {
+  // Mutation pour modifier une idée
+  const updateIdeaMutation = useMutation({
+    mutationFn: async ({ ideaId, data }: { ideaId: string, data: Partial<Idea> }) => {
       const res = await fetch(`/api/ideas/${ideaId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-      
       if (!res.ok) throw new Error('Erreur de modification');
-      
-      if (list) await loadIdeas(list.id);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ideas', list?.id] });
       success({ title: 'Idée modifiée !' });
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Impossible de modifier l\'idée';
-      toastError({ title: 'Erreur', description: msg });
+    },
+    onError: (e: Error) => {
+      toastError({ title: 'Erreur', description: e.message || 'Impossible de modifier l\'idée' });
     }
-  }
+  });
 
-  async function deleteIdea(ideaId: string) {
-    setConfirm({ 
-      open: true, 
-      title: 'Supprimer cette idée ?', 
-      onYes: async () => {
-        try {
-          const res = await fetch(`/api/ideas/${ideaId}`, { method: 'DELETE' });
-          if (res.ok && list) { 
-            await loadIdeas(list.id); 
-            success({ title: 'Idée supprimée !' }); 
-          }
-      } catch {
-          toastError({ title: 'Erreur', description: 'Impossible de supprimer l\'idée' });
-        }
-        setConfirm(null);
-      }
-    });
-  }
+  // Mutation pour supprimer une idée
+  const deleteIdeaMutation = useMutation({
+    mutationFn: async (ideaId: string) => {
+      const res = await fetch(`/api/ideas/${ideaId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Erreur de suppression');
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ideas', list?.id] });
+      success({ title: 'Idée supprimée !' });
+    },
+    onError: () => {
+      toastError({ title: 'Erreur', description: 'Impossible de supprimer l\'idée' });
+    }
+  });
 
-  async function renameList() {
-    if (!list) return;
-    const title = prompt('Nouveau titre de votre liste ?', list.title);
-    if (!title) return;
-    
-    try {
-      const res = await fetch(`/api/lists/${list.id}`, { 
-        method: 'PUT', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ title }) 
+  // Mutation pour renommer la liste
+  const renameListMutation = useMutation({
+    mutationFn: async (title: string) => {
+      if (!list) throw new Error('Liste introuvable');
+      const res = await fetch(`/api/lists/${list.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
       });
-      
-      if (res.ok) {
-        setList(prev => prev ? { ...prev, title } : null);
-        success({ title: 'Liste renommée !' });
-      }
-  } catch {
+      if (!res.ok) throw new Error('Erreur de renommage');
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-list'] });
+      success({ title: 'Liste renommée !' });
+    },
+    onError: () => {
       toastError({ title: 'Erreur', description: 'Impossible de renommer la liste' });
     }
-  }
+  });
 
-  if (loading) {
+  if (loadingList || loadingIdeas) {
     return (
       <div className="text-center py-12">
         <div className="text-4xl mb-4">⏳</div>
@@ -164,13 +155,13 @@ export default function MyListClient() {
     );
   }
 
-  if (error) {
+  if (listError || ideasError) {
     return (
       <Card>
         <CardContent className="text-center py-12">
           <div className="text-4xl mb-4">⚠️</div>
-          <p className="text-[var(--error)] font-medium">{error}</p>
-          <Button onClick={loadMyList} className="mt-4">
+          <p className="text-[var(--error)] font-medium">{listError?.message || ideasError?.message}</p>
+          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['my-list'] })} className="mt-4">
             Réessayer
           </Button>
         </CardContent>
@@ -189,7 +180,7 @@ export default function MyListClient() {
           <p className="text-[var(--foreground-secondary)]">
             Votre liste sera créée automatiquement lors de votre première connexion.
           </p>
-          <Button onClick={loadMyList} className="mt-4">
+          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['my-list'] })} className="mt-4">
             Actualiser
           </Button>
         </CardContent>
@@ -212,7 +203,10 @@ export default function MyListClient() {
                 )}
               </div>
             </div>
-            <Button onClick={renameList} variant="ghost" size="sm">
+            <Button onClick={() => {
+              const title = prompt('Nouveau titre de votre liste ?', list.title);
+              if (title) renameListMutation.mutate(title);
+            }} variant="ghost" size="sm">
               <span className="text-sm">✏️</span> Renommer
             </Button>
           </div>
@@ -231,7 +225,7 @@ export default function MyListClient() {
           <form onSubmit={async (e) => { 
             e.preventDefault(); 
             const form = e.currentTarget;
-            await createIdea(new FormData(form)); 
+            await createIdeaMutation.mutateAsync(new FormData(form)); 
             form.reset(); 
           }} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -349,7 +343,7 @@ export default function MyListClient() {
                         <span className="text-sm">✏️</span>
                       </Button>
                       <Button 
-                        onClick={() => deleteIdea(idea.id)} 
+                        onClick={() => setConfirm({ open: true, title: 'Supprimer cette idée ?', onYes: () => { deleteIdeaMutation.mutate(idea.id); setConfirm(null); } })} 
                         size="sm" 
                         variant="danger"
                       >
@@ -383,8 +377,8 @@ export default function MyListClient() {
                 priceCents: editingIdea.priceCents || undefined,
               }}
               mode="edit"
-              onSubmit={async (data: any) => {
-                await updateIdea(editingIdea.id, data);
+              onSubmit={async (data: Partial<Idea>) => {
+                await updateIdeaMutation.mutateAsync({ ideaId: editingIdea.id, data });
                 setEditingIdea(null);
               }}
             />

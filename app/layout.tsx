@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import ToastProvider from "./components/ui/ToastProvider";
 import { InstallPrompt } from "./components/notifications/InstallPrompt";
+import Providers from "./components/Providers";
+import ToastProvider from "./components/ui/ToastProvider";
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,9 +56,11 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.webmanifest" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <Providers>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </Providers>
         <InstallPrompt />
       </body>
     </html>

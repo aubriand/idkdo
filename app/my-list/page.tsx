@@ -26,13 +26,6 @@ export default async function MyListPage() {
     });
     if (!session) redirect('/');
 
-    // Fetch ideas for this user's list, only those not hidden for owner
-    const myList = await prisma.giftList.findUnique({ where: { ownerId: session.user.id } });
-    const ideas = myList ? await prisma.idea.findMany({
-      where: { listId: myList.id, hiddenForOwner: false },
-      orderBy: { createdAt: 'desc' },
-    }) : [];
-
     return (
       <div className="min-h-screen">
         <Header />
@@ -52,7 +45,7 @@ export default async function MyListPage() {
             </div>
 
             {/* List Management */}
-            <MyListClient key={`ml-${ideas.length}`} />
+            <MyListClient />
           </div>
         </main>
       </div>

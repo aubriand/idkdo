@@ -33,7 +33,7 @@ export default async function ProfilePage() {
               <CardTitle>Mon profil</CardTitle>
             </CardHeader>
             <CardContent>
-              <ProfileClient initialName={user?.name ?? ''} initialImage={user?.image ?? ''} email={user?.email ?? ''} saveAction={updateProfile} />
+              <ProfileClient initialName={user?.name ?? ''} initialImage={user?.image ?? ''} email={user?.email ?? ''} />
             </CardContent>
           </Card>
         </div>

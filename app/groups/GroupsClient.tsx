@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Button from "@/app/components/ui/Button";
 import Input from "@/app/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
@@ -10,37 +11,24 @@ import GroupCard from "../components/GroupCard";
 type Group = { id: string; name: string; slug: string; memberships: Array<{ id: string }> };
 
 export default function GroupsClient() {
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const { success, error: toastError } = useToast();
   const [joinInput, setJoinInput] = useState("");
 
-  const refreshGroups = useCallback(async () => {
-    setLoading(true); 
-    setError(null);
-    try {
+  // Query pour charger les groupes
+  const { data: groups = [], isLoading: loading } = useQuery({
+    queryKey: ['groups'],
+    queryFn: async () => {
       const res = await fetch('/api/groups', { cache: 'no-store' });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data = await res.json();
-      setGroups(data);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Erreur';
-      setError(msg);
-      toastError({ title: 'Erreur', description: msg });
-    } finally {
-      setLoading(false);
+      return await res.json();
     }
-  }, [toastError]);
+  });
 
-  useEffect(() => {
-    refreshGroups();
-  }, [refreshGroups]);
-
-  async function createGroup(formData: FormData) {
-    setError(null); 
-    setLoading(true);
-    try {
+  // Mutation pour créer un groupe
+  const createGroupMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
       const res = await fetch('/api/groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -50,16 +38,12 @@ export default function GroupsClient() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `Erreur ${res.status}`);
       }
-      await refreshGroups();
-      success({ title: 'Groupe créé avec succès !' });
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Erreur';
-      setError(msg);
-      toastError({ title: 'Erreur', description: msg });
-    } finally { 
-      setLoading(false); 
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
     }
-  }
+  });
 
   function extractToken(input: string): string | null {
     try {
@@ -101,7 +85,11 @@ export default function GroupsClient() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createGroup} className="space-y-4">
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            const form = e.currentTarget;
+            await createGroupMutation.mutateAsync(new FormData(form));
+          }} className="space-y-4">
             <Input 
               name="name" 
               label="Nom du groupe" 
@@ -155,7 +143,7 @@ export default function GroupsClient() {
           <div className="text-[var(--foreground-secondary)] text-sm">Aucun groupe. Créez-en un pour partager vos listes.</div>
         ) : (
           <ul className="space-y-2">
-            {groups.map((g) => (
+            {groups.map((g: Group) => (
               <GroupCard key={g.id} id={g.id} name={g.name} membersCount={g.memberships.length} />
             ))}
           </ul>

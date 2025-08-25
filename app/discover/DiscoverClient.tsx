@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import Button from "@/app/components/ui/Button";
 import ButtonLink from "@/app/components/ui/ButtonLink";
@@ -21,59 +21,17 @@ type Idea = {
 };
 
 export default function DiscoverClient() {
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [members, setMembers] = useState<Record<string, Member[]>>({});
-  const [ideas, setIdeas] = useState<Record<string, Idea[]>>({});
-  const [loading, setLoading] = useState(false);
-
-  const loadGroups = useCallback(async () => {
-    setLoading(true);
-    try {
+  // Chargement des groupes
+  const { data: groups = [], isLoading: loadingGroups } = useQuery({
+    queryKey: ['groups'],
+    queryFn: async () => {
       const res = await fetch('/api/groups', { cache: 'no-store' });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data: Group[] = await res.json();
-      setGroups(data);
-      // Load members for each group
-      for (const group of data) {
-        // fire and forget
-        void loadMembers(group.id);
-      }
-    } catch (e: unknown) {
-      console.error('Error loading groups:', e);
-    } finally {
-      setLoading(false);
+      return await res.json();
     }
-  }, []);
+  });
 
-  useEffect(() => {
-    loadGroups();
-  }, [loadGroups]);
-
-  
-
-  async function loadMembers(groupId: string) {
-    try {
-      const res = await fetch(`/api/groups/${groupId}/members`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data: Member[] = await res.json();
-      setMembers(prev => ({ ...prev, [groupId]: data }));
-    } catch (e: unknown) {
-      console.error('Error loading members:', e);
-    }
-  }
-
-  async function loadIdeas(listId: string) {
-    try {
-      const res = await fetch(`/api/ideas?listId=${encodeURIComponent(listId)}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      const data: Idea[] = await res.json();
-      setIdeas(prev => ({ ...prev, [listId]: data }));
-    } catch (e: unknown) {
-      console.error('Error loading ideas:', e);
-    }
-  }
-
-  if (loading) {
+  if (loadingGroups) {
     return (
       <div className="text-center py-12">
         <div className="text-4xl mb-4">⏳</div>
@@ -104,123 +62,121 @@ export default function DiscoverClient() {
 
   return (
     <div className="space-y-8">
-      {groups.map(group => (
-        <Card key={group.id}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span className="text-xl">🎪</span>
-              {group.name}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {members[group.id] ? (
-              <div className="space-y-6">
-                {members[group.id]
-                  .filter(member => member.list) // Only show members with lists
-                  .map(member => (
-                    <div key={member.userId} className="border border-[var(--border)] rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">👤</span>
-                          <div>
-                            <h4 className="font-semibold text-[var(--foreground)]">{member.name}</h4>
-                            <p className="text-sm text-[var(--foreground-secondary)]">
-                              📝 {member.list?.title}
-                            </p>
-                          </div>
-                        </div>
-                        <Button 
-                          onClick={() => member.list && loadIdeas(member.list.id)} 
-                          variant="secondary" 
-                          size="sm"
-                        >
-                          <span className="text-sm">👀</span> Voir la liste
-                        </Button>
-                      </div>
-
-                      {/* Show ideas if loaded */}
-                      {member.list && ideas[member.list.id] && (
-                        <div className="border-t border-[var(--border)] pt-4">
-                          <h5 className="font-medium text-[var(--foreground)] mb-3 flex items-center gap-2">
-                            <span className="text-lg">💡</span>
-                            Idées de cadeaux ({ideas[member.list.id].length})
-                          </h5>
-                          
-                          {ideas[member.list.id].length === 0 ? (
-                            <p className="text-[var(--foreground-secondary)] text-center py-4">
-                              Aucune idée dans cette liste pour le moment.
-                            </p>
-                          ) : (
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                              {ideas[member.list.id].map(idea => (
-                                <div key={idea.id} className="bg-[var(--surface)] rounded-lg p-4 border border-[var(--border)]">
-                                  <div className="flex items-start gap-3">
-                                    {idea.image && (
-                                      // eslint-disable-next-line @next/next/no-img-element
-                                      <img 
-                                        src={idea.image} 
-                                        alt="" 
-                                        className="h-12 w-12 rounded-lg object-cover border border-[var(--border)] flex-shrink-0" 
-                                      />
-                                    )}
-                                    
-                                    <div className="flex-1 min-w-0">
-                                      <h6 className="font-medium text-[var(--foreground)] mb-1 truncate">
-                                        {idea.title}
-                                      </h6>
-                                      
-                                      {idea.notes && (
-                                        <p className="text-xs text-[var(--foreground-secondary)] mb-2 line-clamp-2">
-                                          {idea.notes}
-                                        </p>
-                                      )}
-                                      
-                                      <div className="flex flex-wrap gap-2 text-xs">
-                                        {idea.url && (
-                                          <a 
-                                            href={idea.url} 
-                                            target="_blank" 
-                                            rel="noreferrer" 
-                                            className="text-[var(--primary)] hover:text-[var(--primary-hover)] underline flex items-center gap-1"
-                                          >
-                                            <span>🔗</span> Lien
-                                          </a>
-                                        )}
-                                        {typeof idea.priceCents === 'number' && (
-                                          <span className="bg-[var(--accent-light)] text-[var(--accent)] px-2 py-1 rounded font-medium">
-                                            {(idea.priceCents / 100).toLocaleString(undefined, { 
-                                              style: 'currency', 
-                                              currency: 'EUR' 
-                                            })}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                
-                {members[group.id].filter(m => m.list).length === 0 && (
-                  <p className="text-[var(--foreground-secondary)] text-center py-6">
-                    Aucun membre n&apos;a encore créé de liste dans ce groupe.
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <div className="text-2xl mb-2">⏳</div>
-                <p className="text-[var(--foreground-secondary)]">Chargement des membres...</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {groups.map((group: Group) => (
+        <GroupWithMembers key={group.id} group={group} />
       ))}
+    </div>
+  );
+}
+
+function GroupWithMembers({ group }: { group: Group }) {
+  const { data: members = [], isLoading: loadingMembers } = useQuery({
+    queryKey: ['group-members', group.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/groups/${group.id}/members`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Erreur ${res.status}`);
+      return await res.json();
+    },
+    enabled: !!group.id
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <span className="text-xl">🎪</span>
+          {group.name}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loadingMembers ? (
+          <div className="text-center py-4">Chargement des membres...</div>
+        ) : (
+          <div className="space-y-6">
+            {members.filter((member: Member) => member.list)
+              .map((member: Member) => (
+                <MemberWithIdeas key={member.userId} member={member} />
+              ))}
+            {members.filter((m: Member) => m.list).length === 0 && (
+              <div className="text-[var(--foreground-secondary)] text-sm">Aucun membre avec une liste dans ce groupe.</div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MemberWithIdeas({ member }: { member: Member }) {
+  const { data: ideas = [], isLoading: loadingIdeas } = useQuery({
+    queryKey: ['list-ideas', member.list!.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/ideas?listId=${encodeURIComponent(member.list!.id)}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Erreur ${res.status}`);
+      return await res.json();
+    },
+    enabled: !!member.list?.id
+  });
+
+  return (
+    <div className="border border-[var(--border)] rounded-lg p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">👤</span>
+          <div>
+            <h4 className="font-semibold text-[var(--foreground)]">{member.name}</h4>
+            <p className="text-sm text-[var(--foreground-secondary)]">
+              📝 {member.list?.title}
+            </p>
+          </div>
+        </div>
+        <Button 
+          variant="secondary" 
+          size="sm"
+          disabled
+        >
+          <span className="text-sm">👀</span> Voir la liste
+        </Button>
+      </div>
+      {/* Show ideas if loaded */}
+      {loadingIdeas ? (
+        <div className="text-center py-4">Chargement des idées...</div>
+      ) : (
+        <div className="border-t border-[var(--border)] pt-4">
+          <h5 className="font-medium text-[var(--foreground)] mb-3 flex items-center gap-2">
+            <span className="text-lg">💡</span>
+            Idées de cadeaux ({ideas.length})
+          </h5>
+          {ideas.length === 0 ? (
+            <p className="text-[var(--foreground-secondary)] text-center py-4">
+              Aucune idée dans cette liste pour le moment.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {ideas.map((idea: Idea) => (
+                <div key={idea.id} className="bg-[var(--surface)] rounded-lg p-4 border border-[var(--border)]">
+                  <div className="flex items-start gap-3">
+                    {idea.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img 
+                        src={idea.image} 
+                        alt="" 
+                        className="h-16 w-16 rounded-xl object-cover border-2 border-[var(--border)] shadow-sm flex-shrink-0" 
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h6 className="font-semibold text-[var(--foreground)] mb-2 flex items-center gap-2">
+                        <span className="text-lg">💡</span>
+                        {idea.title}
+                      </h6>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
