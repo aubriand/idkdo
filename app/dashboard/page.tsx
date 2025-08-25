@@ -55,7 +55,7 @@ export default async function DashboardPage() {
     }
 
     const myIdeas = await prisma.idea.findMany({
-      where: { listId: myList.id },
+      where: { listId: myList.id, hiddenForOwner: false },
       orderBy: { createdAt: 'desc' },
       take: 6,
       select: { id: true, title: true, url: true, priceCents: true, image: true, createdAt: true },

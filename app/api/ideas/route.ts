@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     if (!sharedGroup) return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
   }
 
-  const ideas = await prisma.idea.findMany({ where: { listId } });
+  const ideas = await prisma.idea.findMany({ where: { listId, hiddenForOwner: list.ownerId !== session.user.id } });
   return new Response(JSON.stringify(ideas), { status: 200 });
 }
 

@@ -26,37 +26,6 @@ export default async function MyListPage() {
     });
     if (!session) redirect('/');
 
-    // Helpers server actions
-    async function acceptSuggestion(id: string) {
-      'use server';
-      const h = await headers();
-      const base = `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
-      await fetch(`${base}/api/suggestions/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          cookie: h.get('cookie') ?? '',
-        },
-        body: JSON.stringify({ action: 'accept' }),
-      });
-      revalidatePath('/my-list');
-    }
-
-    async function rejectSuggestion(id: string) {
-      'use server';
-      const h = await headers();
-      const base = `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
-      await fetch(`${base}/api/suggestions/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          cookie: h.get('cookie') ?? '',
-        },
-        body: JSON.stringify({ action: 'reject' }),
-      });
-      revalidatePath('/my-list');
-    }
-
     // Fetch ideas for this user's list, only those not hidden for owner
     const myList = await prisma.giftList.findUnique({ where: { ownerId: session.user.id } });
     const ideas = myList ? await prisma.idea.findMany({
@@ -81,33 +50,6 @@ export default async function MyListPage() {
                 </p>
               </div>
             </div>
-
-            {/* List Management */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Mes idées</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {ideas.length === 0 ? (
-                  <div className="text-[var(--foreground-secondary)] text-sm">Aucune idée dans votre liste.</div>
-                ) : (
-                  <ul className="space-y-2">
-                    {ideas.map((i) => (
-                      <li key={i.id} className="rounded-md border border-[var(--border)] bg-[var(--card-bg)] p-3">
-                        <div className="font-medium truncate">{i.title}</div>
-                        {(i.url || i.image || i.notes) && (
-                          <div className="mt-2 text-sm text-[var(--foreground-secondary)] space-y-1">
-                            {i.url ? (<div><a className="text-[var(--primary)] hover:underline" href={i.url} target="_blank" rel="noreferrer">Lien</a></div>) : null}
-                            {i.image ? (<div className="flex items-center gap-2"><span>Image:</span><span className="truncate">{i.image}</span></div>) : null}
-                            {i.notes ? (<div className="truncate">{i.notes}</div>) : null}
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
 
             {/* List Management */}
             <MyListClient key={`ml-${ideas.length}`} />
