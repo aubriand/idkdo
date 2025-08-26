@@ -113,8 +113,8 @@ export default function MyListClient() {
   const deleteIdeaMutation = useMutation({
     mutationFn: async (ideaId: string) => {
       const res = await fetch(`/api/ideas/${ideaId}`, { method: 'DELETE' });
-      if (res.status !== 204) throw new Error('Erreur de suppression');
-      return await res.json();
+      if (!res.ok) throw new Error('Erreur de suppression');
+      return res.ok;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ideas', list?.id] });
@@ -122,7 +122,7 @@ export default function MyListClient() {
     },
     onError: () => {
       toastError({ title: 'Erreur', description: 'Impossible de supprimer l\'idée' });
-    }
+    },
   });
 
   // Mutation pour renommer la liste
@@ -347,7 +347,7 @@ export default function MyListClient() {
                         <span className="text-sm">✏️</span>
                       </Button>
                       <Button 
-                        onClick={() => setConfirm({ open: true, title: 'Supprimer cette idée ?', onYes: () => { deleteIdeaMutation.mutate(idea.id); setConfirm(null); } })} 
+                        onClick={() => setConfirm({ open: true, title: 'Supprimer cette idée ?', onYes: async () => { await deleteIdeaMutation.mutateAsync(idea.id); setConfirm(null); } })} 
                         size="sm" 
                         variant="danger"
                       >
