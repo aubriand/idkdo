@@ -113,7 +113,7 @@ export default function MyListClient() {
   const deleteIdeaMutation = useMutation({
     mutationFn: async (ideaId: string) => {
       const res = await fetch(`/api/ideas/${ideaId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Erreur de suppression');
+      if (res.status !== 204) throw new Error('Erreur de suppression');
       return await res.json();
     },
     onSuccess: () => {
@@ -259,8 +259,12 @@ export default function MyListClient() {
               label="Notes / Détails" 
               placeholder="Taille M, couleur bleue..." 
             />
-            <Button type="submit" variant="primary" size="lg">
-              <span className="text-lg">✨</span> Ajouter l'idée
+            <Button type="submit" variant="primary" size="lg" disabled={createIdeaMutation.isPending}>
+              {createIdeaMutation.isPending ? 'Ajout en cours...' : (
+                <>
+                  <span className="text-lg">✨</span> Ajouter l'idée
+                </>
+              )}
             </Button>
           </form>
         </CardContent>
