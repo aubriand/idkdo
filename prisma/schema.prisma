@@ -132,7 +132,7 @@ model GiftList {
 model Idea {
   id          String   @id @default(cuid())
   title       String
-  url         String?
+  url         String?  @db.LongText
   notes       String?
   priceCents  Int?
   image       String?

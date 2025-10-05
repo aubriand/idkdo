@@ -157,7 +157,7 @@ export default async function DashboardPage() {
                       <ul className="grid gap-3 sm:grid-cols-2">
                         {myIdeas.map((i) => (
                           <li key={i.id}>
-                            <ListItemCard item={{ id: i.id, title: i.title, image: i.image ?? null, url: i.url ?? null, priceCents: i.priceCents ?? null, createdAt: i.createdAt }} />
+                            <ListItemCard item={{ listId: myList.id, id: i.id, title: i.title, image: i.image ?? null, url: i.url ?? null, priceCents: i.priceCents ?? null, createdAt: i.createdAt }} />
                           </li>
                         ))}
                       </ul>
@@ -177,11 +177,7 @@ export default async function DashboardPage() {
                       <ul className="grid gap-3 sm:grid-cols-2">
                         {othersRecent.map((i) => (
                           <li key={i.id} className="space-y-2">
-                            <ListItemCard item={{ id: i.id, title: i.title, image: i.image ?? null, url: i.url ?? null, priceCents: i.priceCents ?? null, createdAt: i.createdAt, ownerName: i.ownerName ?? null, claimsCount: i.claimsCount ?? 0 }} />
-                            <div className="flex items-center justify-between">
-                              <ClaimButton ideaId={i.id} />
-                              <ButtonLink href={`/list/${i.listId}`} size="sm" variant="outline">Voir la liste</ButtonLink>
-                            </div>
+                            <ListItemCard item={{ listId: i.listId, id: i.id, title: i.title, image: i.image ?? null, url: i.url ?? null, priceCents: i.priceCents ?? null, createdAt: i.createdAt, ownerName: i.ownerName ?? null, claimsCount: i.claimsCount ?? 0 }} showViewListButton={true} />
                           </li>
                         ))}
                       </ul>

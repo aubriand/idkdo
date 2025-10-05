@@ -1,13 +1,13 @@
-import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import ClaimButton from "@/app/components/ClaimButton";
+import Header from "@/app/components/Header";
+import ListItemCard from "@/app/components/ListItemCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import { api } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
-import Header from "@/app/components/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
-import ListItemCard from "@/app/components/ListItemCard";
 import { revalidatePath } from "next/cache";
 import nextDynamic from "next/dynamic";
-import ClaimButton from "@/app/components/ClaimButton";
+import { headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 export const dynamic = 'force-dynamic';
 const SuggestIdeaForm = nextDynamic(() => import("@/app/components/SuggestIdeaForm"));
 
@@ -52,27 +52,10 @@ export default async function PublicListPage({ params }: { params: { id: string 
       createdAt: true,
       createdBy: { select: { name: true } },
       hiddenForOwner: true,
+      notes: true,
       _count: { select: { claims: true } }
     },
   });
-
-  // Price formatting is handled in display components when needed
-
-  async function handleDeleteIdea(id: string) {
-    "use server";
-    const h = await headers();
-    const base = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
-    await fetch(`${base}/api/ideas/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        cookie: h.get("cookie") ?? "",
-      },
-    });
-    if (list) {
-      revalidatePath(`/list/${list.id}`);
-    }
-  }
 
   return (
     <div className="min-h-screen">
@@ -100,11 +83,16 @@ export default async function PublicListPage({ params }: { params: { id: string 
                           createdAt: i.createdAt,
                           ownerName: list.owner.name ?? null,
                           claimsCount: (i as { _count?: { claims?: number } })._count?.claims ?? 0,
-                          creatorName: i.hiddenForOwner && i.createdBy?.name !== list.owner.name ? i.createdBy?.name ?? null : null
+                          creatorName: i.hiddenForOwner && i.createdBy?.name !== list.owner.name ? i.createdBy?.name ?? null : null,
+                          notes: i.notes ?? null,
+                          listId: list.id
                         }}
-                        onDelete={(!isOwner && i.createdBy?.name === session.user.name) ? handleDeleteIdea : undefined}
+                        refetch={async () => {
+                          "use server";
+                          list && revalidatePath(`/list/${list.id}`);
+                        }}
+                        showViewListButton={false}
                       />
-                      {!isOwner ? (<ClaimButton ideaId={i.id} />) : null}
                     </li>
                   ))}
                 </ul>

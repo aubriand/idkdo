@@ -4,18 +4,19 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import Button from "@/app/components/ui/Button";
 import ButtonLink from "@/app/components/ui/ButtonLink";
+import Link from 'next/link';
 
 type Group = { id: string; name: string; slug: string };
-type Member = { 
-  userId: string; 
-  name: string; 
-  list: { id: string; title: string } | null 
+type Member = {
+  userId: string;
+  name: string;
+  list: { id: string; title: string; items: Idea[] } | null
 };
-type Idea = { 
-  id: string; 
-  title: string; 
-  url?: string | null; 
-  image?: string | null; 
+type Idea = {
+  id: string;
+  title: string;
+  url?: string | null;
+  image?: string | null;
   priceCents?: number | null;
   notes?: string | null;
 };
@@ -108,19 +109,14 @@ function GroupWithMembers({ group }: { group: Group }) {
 }
 
 function MemberWithIdeas({ member }: { member: Member }) {
-  const { data: ideas = [], isLoading: loadingIdeas } = useQuery({
-    queryKey: ['list-ideas', member.list!.id],
-    queryFn: async () => {
-      const res = await fetch(`/api/ideas?listId=${encodeURIComponent(member.list!.id)}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Erreur ${res.status}`);
-      return await res.json();
-    },
-    enabled: !!member.list?.id
-  });
+
+  if (!member.list) {
+    return null;
+  }
 
   return (
     <div className="border border-[var(--border)] rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <span className="text-2xl">👤</span>
           <div>
@@ -130,53 +126,50 @@ function MemberWithIdeas({ member }: { member: Member }) {
             </p>
           </div>
         </div>
-        <Button 
-          variant="secondary" 
-          size="sm"
-          disabled
+        <Link
+          href={`/list/${member.list.id}`}
+          className='self-end mt-4 md:mt-0'
         >
-          <span className="text-sm">👀</span> Voir la liste
-        </Button>
+          <Button variant="secondary" size="sm">
+            <span className="text-sm">👀</span> Voir la liste
+          </Button>
+        </Link>
       </div>
       {/* Show ideas if loaded */}
-      {loadingIdeas ? (
-        <div className="text-center py-4">Chargement des idées...</div>
-      ) : (
-        <div className="border-t border-[var(--border)] pt-4">
-          <h5 className="font-medium text-[var(--foreground)] mb-3 flex items-center gap-2">
-            <span className="text-lg">💡</span>
-            Idées de cadeaux ({ideas.length})
-          </h5>
-          {ideas.length === 0 ? (
-            <p className="text-[var(--foreground-secondary)] text-center py-4">
-              Aucune idée dans cette liste pour le moment.
-            </p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {ideas.map((idea: Idea) => (
-                <div key={idea.id} className="bg-[var(--surface)] rounded-lg p-4 border border-[var(--border)]">
-                  <div className="flex items-start gap-3">
-                    {idea.image && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img 
-                        src={idea.image} 
-                        alt="" 
-                        className="h-16 w-16 rounded-xl object-cover border-2 border-[var(--border)] shadow-sm flex-shrink-0" 
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h6 className="font-semibold text-[var(--foreground)] mb-2 flex items-center gap-2">
-                        <span className="text-lg">💡</span>
-                        {idea.title}
-                      </h6>
-                    </div>
+      <div className="border-t border-[var(--border)] pt-4">
+        <h5 className="font-medium text-[var(--foreground)] mb-3 flex items-center gap-2">
+          <span className="text-lg">💡</span>
+          Les dernières idées
+        </h5>
+        {member.list.items.length === 0 ? (
+          <p className="text-[var(--foreground-secondary)] text-center py-4">
+            Aucune idée dans cette liste pour le moment.
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {member.list.items.map((idea: Idea) => (
+              <div key={idea.id} className="bg-[var(--surface)] rounded-lg p-4 border border-[var(--border)]">
+                <div className="flex items-start gap-3">
+                  {idea.image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={idea.image}
+                      alt=""
+                      className="h-16 w-16 rounded-xl object-cover border-2 border-[var(--border)] shadow-sm flex-shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h6 className="font-semibold text-[var(--foreground)] mb-2 flex items-center gap-2">
+                      <span className="text-lg">🎁</span>
+                      {idea.title}
+                    </h6>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

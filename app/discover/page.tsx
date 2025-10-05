@@ -8,13 +8,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function DiscoverPage() {
   try {
-    const session = await api.getSession({ 
+    const session = await api.getSession({
       headers: await headers()
     });
     if (!session) redirect('/');
 
     return (
-  <div className="min-h-screen">
+      <div className="min-h-screen">
         <Header />
         <main className="container py-8">
           <div className="max-w-6xl mx-auto space-y-8">
