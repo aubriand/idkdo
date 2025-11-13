@@ -9,6 +9,7 @@ import ImageModal from "./ImageModal";
 import Modal from "./ui/Modal";
 import SuggestIdeaForm from "./SuggestIdeaForm";
 import { useToast } from "./ui/ToastProvider";
+import { authClient } from "@/app/lib/auth-client";
 import { useEffect, useState } from "react";
 
 export type IdeaCardItem = {
@@ -29,6 +30,7 @@ export type IdeaCardItem = {
 interface IdeaCardProps {
   idea: IdeaCardItem;
   isOwner?: boolean;
+  isCreator?: boolean;
   showClaimButton?: boolean;
   showViewListButton?: boolean;
   onEdit?: (id: string) => void;
@@ -37,7 +39,8 @@ interface IdeaCardProps {
 
 export default function IdeaCard({ 
   idea, 
-  isOwner = false, 
+  isOwner = false,
+  isCreator = false,
   showClaimButton = false,
   showViewListButton = false, 
   onEdit, 
@@ -45,10 +48,21 @@ export default function IdeaCard({
 }: IdeaCardProps) {
   const queryClient = useQueryClient();
   const { success, error: toastError } = useToast();
+  const session = authClient.useSession();
 
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [confirm, setConfirm] = useState<{ open: boolean; title: string; onYes: () => void } | null>(null);
   const [editingIdea, setEditingIdea] = useState<IdeaCardItem | null>(null);
+  const [canEdit, setCanEdit] = useState(false);
+
+  // Déterminer si l'utilisateur peut modifier/supprimer
+  useEffect(() => {
+    if (isOwner) {
+      setCanEdit(true);
+    } else if (session?.data?.user?.name === idea.creatorName) {
+      setCanEdit(true);
+    }
+  }, [isOwner, isCreator, session?.data?.user?.name, idea.creatorName]);
 
   const price = idea.priceCents != null
     ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(idea.priceCents / 100)
@@ -199,7 +213,7 @@ export default function IdeaCard({
               )}
             </div>
 
-            {isOwner && (
+            {canEdit && (
               <div className="flex gap-2">
                 <button 
                   onClick={() => setEditingIdea(idea)} 
