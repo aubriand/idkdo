@@ -135,7 +135,7 @@ model Idea {
   url         String?  @db.LongText
   notes       String?
   priceCents  Int?
-  image       String?
+  image       String? @db.LongText
   createdById String
   listId      String
   createdAt   DateTime @default(now())

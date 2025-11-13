@@ -40,7 +40,7 @@ export default function ClaimButton({ ideaId, initialClaimed = false }: { ideaId
 
   return (
     <Button onClick={() => claimMutation.mutate()} size="sm" variant={isClaimed.data ? "outline" : "primary"} disabled={isClaimed.isPending}>
-      <span className="text-sm">{isClaimed.data ? "✅ Pris" : "🎁 Je m'en occupe"}</span>
+      <span className="text-sm text-nowrap">{isClaimed.data ? "✅ Pris" : "🎁 Je m'en occupe"}</span>
     </Button>
   );
 }

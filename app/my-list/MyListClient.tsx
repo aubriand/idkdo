@@ -1,24 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Button from "@/app/components/ui/Button";
-import Input from "@/app/components/ui/Input";
-import Modal from "@/app/components/ui/Modal";
-import SuggestIdeaForm from "@/app/components/SuggestIdeaForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
+import Input from "@/app/components/ui/Input";
 import { useToast } from "@/app/components/ui/ToastProvider";
-
-type GiftList = { id: string; title: string; description?: string };
-type Idea = {
-  id: string;
-  title: string;
-  listId: string;
-  url?: string | null;
-  image?: string | null;
-  priceCents?: number | null;
-  notes?: string | null;
-};
+import { GiftList, Idea } from "@/generated/prisma";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import IdeaCard from "../components/IdeaCard";
 
 export default function MyListClient() {
   const queryClient = useQueryClient();
@@ -55,10 +43,6 @@ export default function MyListClient() {
     enabled: !!list?.id
   });
 
-  // modal state
-  const [confirm, setConfirm] = useState<{ open: boolean; title: string; onYes: () => void } | null>(null);
-  const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
-
   // Mutation pour créer une idée
   const createIdeaMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -87,42 +71,6 @@ export default function MyListClient() {
     onError: (e: Error) => {
       toastError({ title: 'Erreur', description: e.message || 'Impossible d\'ajouter l\'idée' });
     }
-  });
-
-  // Mutation pour modifier une idée
-  const updateIdeaMutation = useMutation({
-    mutationFn: async ({ ideaId, data }: { ideaId: string, data: Partial<Idea> }) => {
-      const res = await fetch(`/api/ideas/${ideaId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (!res.ok) throw new Error('Erreur de modification');
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ideas', list?.id] });
-      success({ title: 'Idée modifiée !' });
-    },
-    onError: (e: Error) => {
-      toastError({ title: 'Erreur', description: e.message || 'Impossible de modifier l\'idée' });
-    }
-  });
-
-  // Mutation pour supprimer une idée
-  const deleteIdeaMutation = useMutation({
-    mutationFn: async (ideaId: string) => {
-      const res = await fetch(`/api/ideas/${ideaId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Erreur de suppression');
-      return res.ok;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ideas', list?.id] });
-      success({ title: 'Idée supprimée !' });
-    },
-    onError: () => {
-      toastError({ title: 'Erreur', description: 'Impossible de supprimer l\'idée' });
-    },
   });
 
   // Mutation pour renommer la liste
@@ -291,125 +239,25 @@ export default function MyListClient() {
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
-            {ideas.map(idea => (
-              <Card key={idea.id} className="hover:shadow-lg transition-all duration-200">
-                <CardContent className="p-3!">
-                  <div className="flex h-full items-center gap-4">
-                    {idea.image && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img 
-                        src={idea.image} 
-                        alt="" 
-                        className="h-20 w-20 rounded-xl object-cover border-2 border-[var(--border)] shadow-sm flex-shrink-0" 
-                      />
-                    )}
-                    
-                    <div className="flex-1 min-w-0">
-                      <h6 className="font-semibold text-[var(--foreground)] mb-2 flex items-center gap-2">
-                        <span className="text-lg">💡</span>
-                        {idea.title}
-                      </h6>
-                      
-                      {idea.notes && (
-                        <p className="text-sm text-[var(--foreground-secondary)] mb-3 line-clamp-2">
-                          {idea.notes}
-                        </p>
-                      )}
-                      
-                      <div className="flex flex-wrap gap-3 text-sm">
-                        {idea.url && (
-                          <a 
-                            href={idea.url} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            className="text-[var(--primary)] hover:text-[var(--primary-hover)] underline flex items-center gap-1"
-                          >
-                            <span>🔗</span> Voir le produit
-                          </a>
-                        )}
-                        {typeof idea.priceCents === 'number' && (
-                          <span className="bg-[var(--primary-light)] text-[var(--primary)] px-2 py-1 rounded-lg font-medium">
-                            {(idea.priceCents / 100).toLocaleString(undefined, { 
-                              style: 'currency', 
-                              currency: 'EUR' 
-                            })}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col gap-1">
-                      <Button 
-                        onClick={() => setEditingIdea(idea)} 
-                        size="sm" 
-                        variant="ghost"
-                      >
-                        <span className="text-sm">✏️</span>
-                      </Button>
-                      <Button 
-                        onClick={() => setConfirm({ open: true, title: 'Supprimer cette idée ?', onYes: async () => { await deleteIdeaMutation.mutateAsync(idea.id); setConfirm(null); } })} 
-                        size="sm" 
-                        variant="danger"
-                      >
-                        <span className="text-sm">🗑️</span>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {ideas.map((idea: Idea) => (
+              <IdeaCard 
+                key={idea.id}
+                idea={{
+                  id: idea.id,
+                  title: idea.title,
+                  image: idea.image ?? null,
+                  url: idea.url ?? null,
+                  priceCents: idea.priceCents ?? null,
+                  createdAt: idea.createdAt,
+                  notes: idea.notes ?? null,
+                  listId: idea.listId,
+                }}
+                isOwner={true}
+              />
             ))}
           </div>
         )}
       </div>
-
-      {/* Edit Idea Modal */}
-      <Modal 
-        open={!!editingIdea} 
-        onClose={() => setEditingIdea(null)} 
-        title="Modifier l'idée"
-        footer={null}
-      >
-        {editingIdea && (
-          <div className="space-y-4">
-            <SuggestIdeaForm
-              listId={editingIdea.listId}
-              initialValues={{
-                title: editingIdea.title,
-                url: editingIdea.url || "",
-                image: editingIdea.image || "",
-                notes: editingIdea.notes || "",
-                priceCents: editingIdea.priceCents || undefined,
-              }}
-              mode="edit"
-              onSubmit={async (data: Partial<Idea>) => {
-                await updateIdeaMutation.mutateAsync({ ideaId: editingIdea.id, data });
-                setEditingIdea(null);
-              }}
-            />
-          </div>
-        )}
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      <Modal 
-        open={!!confirm?.open} 
-        onClose={() => setConfirm(null)} 
-        title={confirm?.title} 
-        footer={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setConfirm(null)}>
-              Annuler
-            </Button>
-            <Button variant="danger" onClick={() => confirm?.onYes()}>
-              Supprimer
-            </Button>
-          </div>
-        }
-      >
-        <p className="text-[var(--foreground-secondary)]">
-          Cette action est irréversible.
-        </p>
-      </Modal>
     </div>
   );
 }

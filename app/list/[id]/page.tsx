@@ -1,6 +1,5 @@
-import ClaimButton from "@/app/components/ClaimButton";
 import Header from "@/app/components/Header";
-import ListItemCard from "@/app/components/ListItemCard";
+import IdeaCard from "@/app/components/IdeaCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import { api } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
@@ -72,9 +71,9 @@ export default async function PublicListPage({ params }: { params: { id: string 
               ) : (
                 <ul className="grid gap-3 sm:grid-cols-2">
                   {ideas.map((i) => (
-                    <li key={i.id} className="space-y-2">
-                      <ListItemCard
-                        item={{
+                    <li key={i.id}>
+                      <IdeaCard
+                        idea={{
                           id: i.id,
                           title: i.title,
                           image: i.image ?? null,
@@ -87,11 +86,12 @@ export default async function PublicListPage({ params }: { params: { id: string 
                           notes: i.notes ?? null,
                           listId: list.id
                         }}
+                        isOwner={isOwner}
+                        showClaimButton={!isOwner}
                         refetch={async () => {
                           "use server";
                           list && revalidatePath(`/list/${list.id}`);
                         }}
-                        showViewListButton={false}
                       />
                     </li>
                   ))}

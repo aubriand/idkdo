@@ -93,7 +93,7 @@ export default function GroupsClient() {
             <Input 
               name="name" 
               label="Nom du groupe" 
-              placeholder="Famille Martin 2025" 
+              placeholder="Famille 2025" 
               required 
             />
             <Button type="submit" size="lg" disabled={loading} variant="secondary">

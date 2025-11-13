@@ -1,16 +1,14 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import GroupCard from "../components/GroupCard";
+import Header from '../components/Header';
+import IdeaCard from "../components/IdeaCard";
+import EnablePushButton from '../components/notifications/EnablePushButton';
+import ButtonLink from '../components/ui/ButtonLink';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { api } from '../lib/auth';
 import { prisma } from '../lib/prisma';
 import SessionClient from './SessionClient';
-import EnablePushButton from '../components/notifications/EnablePushButton';
-import Header from '../components/Header';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import ListItemCard from "../components/ListItemCard";
-import ButtonLink from '../components/ui/ButtonLink';
-import ClaimButton from "../components/ClaimButton";
-import GroupCard from "../components/GroupCard";
-import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +34,6 @@ export default async function DashboardPage() {
       const seed = makeSeed(session.user.name || session.user.email || 'user');
       const image = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(seed)}`;
       await prisma.user.update({ where: { id: session.user.id }, data: { image, updatedAt: new Date() }, select: { id: true } });
-      // Re-fetch session? keep lightweight: UI reads image via session, but it's fine if it shows after next load.
     }
 
     // Ensure the user's list exists, then fetch latest items
@@ -58,7 +55,7 @@ export default async function DashboardPage() {
       where: { listId: myList.id, hiddenForOwner: false },
       orderBy: { createdAt: 'desc' },
       take: 6,
-      select: { id: true, title: true, url: true, priceCents: true, image: true, createdAt: true },
+      select: { id: true, title: true, url: true, priceCents: true, image: true, createdAt: true, notes: true },
     });
 
     // Groups (owned or member)
@@ -104,7 +101,7 @@ export default async function DashboardPage() {
             where: { listId: { in: lists.map((l) => l.id) } },
             orderBy: { createdAt: 'desc' },
             take: 8,
-            select: { id: true, title: true, url: true, priceCents: true, image: true, createdAt: true, listId: true, _count: { select: { claims: true } } },
+            select: { id: true, title: true, url: true, priceCents: true, image: true, createdAt: true, listId: true, notes: true, _count: { select: { claims: true } } },
           });
           othersRecent = ideas.map((i) => {
             const owner = listIdToOwner.get(i.listId)!;
@@ -124,8 +121,6 @@ export default async function DashboardPage() {
         }
       }
     }
-
-    // price formatting handled inside cards where needed
 
     return (
       <div className="min-h-screen">
@@ -154,10 +149,22 @@ export default async function DashboardPage() {
                     {myIdeas.length === 0 ? (
                       <div className="text-[var(--foreground-secondary)] text-sm">Aucune idée pour le moment. Ajoutez votre première idée dans &quot;Ma liste&quot;.</div>
                     ) : (
-                      <ul className="grid gap-3 sm:grid-cols-2">
-                        {myIdeas.map((i) => (
+                      <ul className="grid gap-3 grid-cols-1">
+                        {myIdeas.slice(-3).map((i) => (
                           <li key={i.id}>
-                            <ListItemCard item={{ listId: myList.id, id: i.id, title: i.title, image: i.image ?? null, url: i.url ?? null, priceCents: i.priceCents ?? null, createdAt: i.createdAt }} />
+                            <IdeaCard 
+                              idea={{
+                                id: i.id,
+                                title: i.title,
+                                image: i.image ?? null,
+                                url: i.url ?? null,
+                                priceCents: i.priceCents ?? null,
+                                createdAt: i.createdAt,
+                                notes: i.notes ?? null,
+                                listId: myList.id,
+                              }}
+                              isOwner={true}
+                            />
                           </li>
                         ))}
                       </ul>
@@ -172,12 +179,16 @@ export default async function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     {othersRecent.length === 0 ? (
-                      <div className="text-[var(--foreground-secondary)] text-sm">Rien à afficher pour l’instant. Rejoignez un groupe pour voir les idées des autres.</div>
+                      <div className="text-[var(--foreground-secondary)] text-sm">Rien à afficher pour l'instant. Rejoignez un groupe pour voir les idées des autres.</div>
                     ) : (
                       <ul className="grid gap-3 sm:grid-cols-2">
                         {othersRecent.map((i) => (
-                          <li key={i.id} className="space-y-2">
-                            <ListItemCard item={{ listId: i.listId, id: i.id, title: i.title, image: i.image ?? null, url: i.url ?? null, priceCents: i.priceCents ?? null, createdAt: i.createdAt, ownerName: i.ownerName ?? null, claimsCount: i.claimsCount ?? 0 }} showViewListButton={true} />
+                          <li key={i.id}>
+                            <IdeaCard 
+                              idea={i}
+                              showClaimButton={true}
+                              showViewListButton={true}
+                            />
                           </li>
                         ))}
                       </ul>
