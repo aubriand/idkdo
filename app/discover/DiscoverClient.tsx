@@ -5,21 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Ca
 import Button from "@/app/components/ui/Button";
 import ButtonLink from "@/app/components/ui/ButtonLink";
 import Link from 'next/link';
-
-type Group = { id: string; name: string; slug: string };
-type Member = {
-  userId: string;
-  name: string;
-  list: { id: string; title: string; items: Idea[] } | null
-};
-type Idea = {
-  id: string;
-  title: string;
-  url?: string | null;
-  image?: string | null;
-  priceCents?: number | null;
-  notes?: string | null;
-};
+import IdeaCard from '../components/IdeaCard';
+import { GiftList, Group, Idea, Membership } from '@/generated/prisma';
+import { authClient } from '../lib/auth-client';
 
 export default function DiscoverClient() {
   // Chargement des groupes
@@ -70,6 +58,7 @@ export default function DiscoverClient() {
   );
 }
 
+type Member = Membership & { list: GiftList & { items: Idea[] }, name: string };
 function GroupWithMembers({ group }: { group: Group }) {
   const { data: members = [], isLoading: loadingMembers } = useQuery({
     queryKey: ['group-members', group.id],
@@ -81,6 +70,9 @@ function GroupWithMembers({ group }: { group: Group }) {
     enabled: !!group.id
   });
 
+  const session = authClient.useSession();
+  // Ne pas afficher l'utilisateur courant
+  const filteredMembers = members.filter((member: Member) => member.userId !== session?.data?.user.id);
   return (
     <Card>
       <CardHeader>
@@ -94,11 +86,11 @@ function GroupWithMembers({ group }: { group: Group }) {
           <div className="text-center py-4">Chargement des membres...</div>
         ) : (
           <div className="space-y-6">
-            {members.filter((member: Member) => member.list)
+            {filteredMembers.filter((member: Member) => member.list)
               .map((member: Member) => (
                 <MemberWithIdeas key={member.userId} member={member} />
               ))}
-            {members.filter((m: Member) => m.list).length === 0 && (
+            {filteredMembers.filter((m: Member) => m.list).length === 0 && (
               <div className="text-[var(--foreground-secondary)] text-sm">Aucun membre avec une liste dans ce groupe.</div>
             )}
           </div>
@@ -148,24 +140,11 @@ function MemberWithIdeas({ member }: { member: Member }) {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {member.list.items.map((idea: Idea) => (
-              <div key={idea.id} className="bg-[var(--surface)] rounded-lg p-4 border border-[var(--border)]">
-                <div className="flex items-start gap-3">
-                  {idea.image && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={idea.image}
-                      alt=""
-                      className="h-16 w-16 rounded-xl object-cover border-2 border-[var(--border)] shadow-sm flex-shrink-0"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h6 className="font-semibold text-[var(--foreground)] mb-2 flex items-center gap-2">
-                      <span className="text-lg">🎁</span>
-                      {idea.title}
-                    </h6>
-                  </div>
-                </div>
-              </div>
+              <IdeaCard 
+                key={idea.id}
+                idea={idea}
+                showClaimButton={true}
+              />
             ))}
           </div>
         )}
