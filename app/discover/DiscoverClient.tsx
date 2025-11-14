@@ -60,7 +60,7 @@ export default function DiscoverClient() {
 
 type Member = Membership & { list: GiftList & { items: Idea[] }, name: string };
 function GroupWithMembers({ group }: { group: Group }) {
-  const { data: members = [], isLoading: loadingMembers } = useQuery({
+  const { data: members = [], isLoading: loadingMembers, refetch } = useQuery({
     queryKey: ['group-members', group.id],
     queryFn: async () => {
       const res = await fetch(`/api/groups/${group.id}/members`, { cache: 'no-store' });
@@ -88,7 +88,7 @@ function GroupWithMembers({ group }: { group: Group }) {
           <div className="space-y-6">
             {filteredMembers.filter((member: Member) => member.list)
               .map((member: Member) => (
-                <MemberWithIdeas key={member.userId} member={member} />
+                <MemberWithIdeas key={member.userId} member={member} refetch={refetch} />
               ))}
             {filteredMembers.filter((m: Member) => m.list).length === 0 && (
               <div className="text-[var(--foreground-secondary)] text-sm">Aucun membre avec une liste dans ce groupe.</div>
@@ -100,7 +100,7 @@ function GroupWithMembers({ group }: { group: Group }) {
   );
 }
 
-function MemberWithIdeas({ member }: { member: Member }) {
+function MemberWithIdeas({ member, refetch }: { member: Member, refetch: () => void }) {
 
   if (!member.list) {
     return null;
@@ -144,6 +144,7 @@ function MemberWithIdeas({ member }: { member: Member }) {
                 key={idea.id}
                 idea={idea}
                 showClaimButton={true}
+                refetch={refetch}
               />
             ))}
           </div>

@@ -30,7 +30,6 @@ export type IdeaCardItem = {
 interface IdeaCardProps {
   idea: IdeaCardItem;
   isOwner?: boolean;
-  isCreator?: boolean;
   showClaimButton?: boolean;
   showViewListButton?: boolean;
   onEdit?: (id: string) => void;
@@ -40,7 +39,6 @@ interface IdeaCardProps {
 export default function IdeaCard({ 
   idea, 
   isOwner = false,
-  isCreator = false,
   showClaimButton = false,
   showViewListButton = false, 
   onEdit, 
@@ -59,10 +57,16 @@ export default function IdeaCard({
   useEffect(() => {
     if (isOwner) {
       setCanEdit(true);
-    } else if (session?.data?.user?.name === idea.creatorName) {
-      setCanEdit(true);
+    } else {
+      if (!idea.creatorName) {
+        setCanEdit(false);
+        return;
+      }
+      if (session?.data?.user?.name === idea.creatorName) {
+        setCanEdit(true);
+      }
     }
-  }, [isOwner, isCreator, session?.data?.user?.name, idea.creatorName]);
+  }, [isOwner, session?.data?.user?.name, idea.creatorName]);
 
   const price = idea.priceCents != null
     ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(idea.priceCents / 100)
@@ -160,7 +164,7 @@ export default function IdeaCard({
 
           {/* Notes */}
           {idea.notes && (
-            <p className="text-sm text-[var(--foreground-secondary)] line-clamp-2 mb-3">
+            <p className="text-sm text-[var(--foreground-secondary)] mb-3">
               {idea.notes}
             </p>
           )}

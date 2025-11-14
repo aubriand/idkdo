@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { api } from '../lib/auth';
 import { prisma } from '../lib/prisma';
 import SessionClient from './SessionClient';
+import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,6 +83,8 @@ export default async function DashboardPage() {
       listId: string;
       ownerName: string | null;
       ownerImage: string | null;
+      creatorName: string | null;
+      notes: string | null;
       claimsCount?: number | null;
     }> = [];
     if (groupIds.length) {
@@ -101,7 +104,7 @@ export default async function DashboardPage() {
             where: { listId: { in: lists.map((l) => l.id) } },
             orderBy: { createdAt: 'desc' },
             take: 8,
-            select: { id: true, title: true, url: true, priceCents: true, image: true, createdAt: true, listId: true, notes: true, _count: { select: { claims: true } } },
+            select: { id: true, title: true, url: true, priceCents: true, image: true, createdAt: true, listId: true, notes: true, createdBy: true, _count: { select: { claims: true } } },
           });
           othersRecent = ideas.map((i) => {
             const owner = listIdToOwner.get(i.listId)!;
@@ -115,6 +118,8 @@ export default async function DashboardPage() {
               listId: i.listId,
               ownerName: owner?.name ?? null,
               ownerImage: owner?.image ?? null,
+              creatorName: i.createdBy.name ?? null,
+              notes: i.notes ?? null,
               claimsCount: (i as { _count?: { claims?: number } })._count?.claims ?? 0,
             };
           });
@@ -164,6 +169,10 @@ export default async function DashboardPage() {
                                 listId: myList.id,
                               }}
                               isOwner={true}
+                              refetch={async () => {
+                                'use server'
+                                revalidatePath('/dashboard')
+                              }}           
                             />
                           </li>
                         ))}
@@ -188,6 +197,10 @@ export default async function DashboardPage() {
                               idea={i}
                               showClaimButton={true}
                               showViewListButton={true}
+                              refetch={async () => {
+                                'use server'
+                                revalidatePath('/dashboard')
+                              }}
                             />
                           </li>
                         ))}
