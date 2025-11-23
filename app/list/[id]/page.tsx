@@ -1,12 +1,11 @@
 import Header from "@/app/components/Header";
-import IdeaCard from "@/app/components/IdeaCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/Card";
 import { api } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
-import { revalidatePath } from "next/cache";
 import nextDynamic from "next/dynamic";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import ListClient from "./ListClient";
 export const dynamic = 'force-dynamic';
 const SuggestIdeaForm = nextDynamic(() => import("@/app/components/SuggestIdeaForm"));
 
@@ -37,25 +36,6 @@ export default async function PublicListPage({ params }: { params: { id: string 
     if (!shared) return notFound();
   }
 
-  const ideas = await prisma.idea.findMany({
-    where: isOwner
-      ? { listId: list.id, hiddenForOwner: false }
-      : { listId: list.id },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      url: true,
-      image: true,
-      priceCents: true,
-      createdAt: true,
-      createdBy: { select: { name: true } },
-      hiddenForOwner: true,
-      notes: true,
-      _count: { select: { claims: true } }
-    },
-  });
-
   return (
     <div className="min-h-screen">
       <Header />
@@ -66,37 +46,7 @@ export default async function PublicListPage({ params }: { params: { id: string 
               <CardTitle className="flex items-center gap-2"><span>🎁</span> Liste de {list.owner.name ?? "Membre"}</CardTitle>
             </CardHeader>
             <CardContent>
-              {ideas.length === 0 ? (
-                <div className="text-[var(--foreground-secondary)] text-sm">Aucune idée pour l'instant.</div>
-              ) : (
-                <ul className="grid gap-3 sm:grid-cols-2">
-                  {ideas.map((i) => (
-                    <li key={i.id}>
-                      <IdeaCard
-                        idea={{
-                          id: i.id,
-                          title: i.title,
-                          image: i.image ?? null,
-                          url: i.url ?? null,
-                          priceCents: i.priceCents ?? null,
-                          createdAt: i.createdAt,
-                          ownerName: list.owner.name ?? null,
-                          claimsCount: (i as { _count?: { claims?: number } })._count?.claims ?? 0,
-                          creatorName: i.hiddenForOwner && i.createdBy?.name !== list.owner.name ? i.createdBy?.name ?? null : null,
-                          notes: i.notes ?? null,
-                          listId: list.id
-                        }}
-                        isOwner={isOwner}
-                        showClaimButton={!isOwner}
-                        refetch={async () => {
-                          "use server";
-                          list && revalidatePath(`/list/${list.id}`);
-                        }}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <ListClient initialsIdeas={[]} list={list} isOwner={isOwner} />
             </CardContent>
           </Card>
           {!isOwner && (

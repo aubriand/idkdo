@@ -40,3 +40,24 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   ]);
   return new Response(null, { status: 204 });
 }
+
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const ideas = await prisma.idea.findMany({
+    where: { listId: id },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      title: true,
+      url: true,
+      image: true,
+      priceCents: true,
+      createdAt: true,
+      createdBy: { select: { name: true } },
+      hiddenForOwner: true,
+      notes: true,
+      _count: { select: { claims: true } }
+    },
+  });
+  return new Response(JSON.stringify(ideas), { status: 200 });
+}
