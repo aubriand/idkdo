@@ -207,7 +207,7 @@ export default function IdeaCard({
             <div className="flex gap-2">
               {showClaimButton && !isOwner && (
                 <div className="flex-1">
-                  <ClaimButton ideaId={idea.id} />
+                  <ClaimButton ideaId={idea.id} initialClaimed={idea.claimsCount ? idea.claimsCount > 0 : false} />
                 </div>
               )}
               {showViewListButton && (

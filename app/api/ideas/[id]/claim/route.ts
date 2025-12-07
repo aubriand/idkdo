@@ -7,8 +7,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const session = await api.getSession({ headers: await headers() });
   if (!session) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   const { id } = await params;
-  const claim = await prisma.claim.findFirst({ where: { ideaId: id, userId: session.user.id } });
-  return new Response(JSON.stringify({ claimed: !!claim }), { status: 200 });
+  const claims = await prisma.claim.findMany({ where: { ideaId: id}});
+  return new Response(JSON.stringify({ claimed: claims.length > 0 }), { status: 200 });
 }
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
